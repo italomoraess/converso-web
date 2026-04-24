@@ -13,11 +13,10 @@ import {
   CheckSquare,
   Check,
   Trash2,
-  X,
 } from "lucide-react";
 import { appointmentsService } from "@/services/appointments.service";
 import { leadsService } from "@/services/leads.service";
-import { localTaskToApi, taskTypeToApi } from "@/lib/mappers";
+import { localTaskToApi } from "@/lib/mappers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,16 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TASK_TYPES, type TaskType } from "@/types";
+import { TASK_TYPES, TASK_TYPE_LABELS, type TaskType } from "@/types";
 import { cn, todayISO } from "@/lib/utils";
 import { toast } from "sonner";
 
-const TASK_TYPE_ICONS: Record<string, React.ElementType> = {
-  Ligação: Phone,
-  Visita: MapPin,
-  Reunião: Users,
-  "Retornar proposta": FileText,
-  Outro: CheckSquare,
+const TASK_TYPE_ICONS: Record<TaskType, React.ElementType> = {
+  Call: Phone,
+  Visit: MapPin,
+  Meeting: Users,
+  "Follow Up": FileText,
+  Other: CheckSquare,
 };
 
 const MONTH_NAMES = [
@@ -62,9 +61,8 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [showNewTask, setShowNewTask] = useState(false);
 
-  // Form state
   const [title, setTitle] = useState("");
-  const [type, setType] = useState<TaskType>("Ligação");
+  const [taskType, setTaskType] = useState<TaskType>("Call");
   const [taskDate, setTaskDate] = useState(todayISO());
   const [leadId, setLeadId] = useState("");
   const [notes, setNotes] = useState("");
@@ -107,7 +105,7 @@ export default function AgendaPage() {
 
   function resetForm() {
     setTitle("");
-    setType("Ligação");
+    setTaskType("Call");
     setTaskDate(selectedDate);
     setLeadId("");
     setNotes("");
@@ -121,7 +119,7 @@ export default function AgendaPage() {
     }
     const body = localTaskToApi({
       title: title.trim(),
-      type,
+      type: taskType,
       date: taskDate,
       leadId: leadId || undefined,
       notes: notes.trim() || undefined,
@@ -160,7 +158,6 @@ export default function AgendaPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Agenda</h1>
@@ -178,9 +175,7 @@ export default function AgendaPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Calendar */}
         <Card className="border-[var(--border)] bg-[var(--card)] p-4 lg:col-span-3">
-          {/* Month nav */}
           <div className="flex items-center justify-between mb-4">
             <button onClick={prevMonth} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--muted)] transition-colors">
               <ChevronLeft size={16} />
@@ -193,7 +188,6 @@ export default function AgendaPage() {
             </button>
           </div>
 
-          {/* Day names */}
           <div className="grid grid-cols-7 mb-1">
             {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((d) => (
               <div key={d} className="text-center text-[10px] font-semibold text-[var(--muted-foreground)] py-1">
@@ -202,7 +196,6 @@ export default function AgendaPage() {
             ))}
           </div>
 
-          {/* Days */}
           <div className="grid grid-cols-7 gap-0.5">
             {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
@@ -226,10 +219,7 @@ export default function AgendaPage() {
                 >
                   {day}
                   {hasTasks && !isSelected && (
-                    <span
-                      className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                      style={{ backgroundColor: isToday ? "var(--primary)" : "var(--primary)" }}
-                    />
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--primary)]" />
                   )}
                 </button>
               );
@@ -237,7 +227,6 @@ export default function AgendaPage() {
           </div>
         </Card>
 
-        {/* Task list for selected date */}
         <div className="lg:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-[var(--foreground)] text-sm">
@@ -283,12 +272,12 @@ export default function AgendaPage() {
                         )}
                         <div className="flex items-center gap-1 mt-1">
                           <Icon size={11} className="text-[var(--muted-foreground)]" />
-                          <span className="text-[10px] text-[var(--muted-foreground)]">{task.type}</span>
+                          <span className="text-[10px] text-[var(--muted-foreground)]">{TASK_TYPE_LABELS[task.type]}</span>
                         </div>
                       </div>
                       <button
                         onClick={() => deleteMutation.mutate(task.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors shrink-0"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -304,7 +293,6 @@ export default function AgendaPage() {
         </div>
       </div>
 
-      {/* New Task Modal */}
       <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
         <DialogContent className="bg-[var(--card)] border-[var(--border)]">
           <DialogHeader>
@@ -325,12 +313,12 @@ export default function AgendaPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm text-[var(--text-secondary)]">Tipo</Label>
-                <Select value={type} onValueChange={(v) => setType(v as TaskType)}>
+                <Select value={taskType} onValueChange={(v) => setTaskType(v as TaskType)}>
                   <SelectTrigger className="bg-[var(--background)] border-[var(--border)]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{TASK_TYPE_LABELS[t]}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -352,7 +340,7 @@ export default function AgendaPage() {
                   <SelectValue placeholder="Selecionar lead..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((l) => <SelectItem key={l.id} value={l.id}>{l.nome}</SelectItem>)}
+                  {leads.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

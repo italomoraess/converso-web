@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Inbox, MessageCircle } from "lucide-react";
 import { leadsService } from "@/services/leads.service";
 import { stageToApi } from "@/lib/mappers";
-import { FUNNEL_STAGES, type FunnelStage, type Lead } from "@/types";
+import { FUNNEL_STAGES, FUNNEL_STAGE_LABELS, LEAD_ORIGIN_LABELS, type FunnelStage, type Lead } from "@/types";
 import { getOriginBadgeStyle, getKanbanColumnColor, cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,26 +20,25 @@ function KanbanCard({
   lead: Lead;
   onMoveStage: (lead: Lead, stage: FunnelStage) => void;
 }) {
-  const origin = getOriginBadgeStyle(lead.origem);
+  const origin = getOriginBadgeStyle(lead.origin);
 
   return (
     <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 space-y-2 shadow-sm hover:shadow-md transition-shadow">
       <Link href={`/leads/${lead.id}`}>
         <p className="text-sm font-semibold text-[var(--foreground)] truncate hover:text-[var(--primary)]">
-          {lead.nome}
+          {lead.name}
         </p>
-        <p className="text-xs text-[var(--text-secondary)]">{lead.telefone}</p>
-        {lead.origem && (
+        <p className="text-xs text-[var(--text-secondary)]">{lead.phone}</p>
+        {lead.origin && (
           <span className={cn("inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1", origin.bg, origin.text)}>
-            {lead.origem}
+            {LEAD_ORIGIN_LABELS[lead.origin]}
           </span>
         )}
-        {lead.stage === "Perdido" && lead.motivoPerdido && (
-          <p className="text-xs italic text-[var(--danger)] mt-1 truncate">{lead.motivoPerdido}</p>
+        {lead.stage === "Lost" && lead.lostReason && (
+          <p className="text-xs italic text-[var(--danger)] mt-1 truncate">{lead.lostReason}</p>
         )}
       </Link>
 
-      {/* Move stage pills */}
       <div className="flex flex-wrap gap-1">
         {FUNNEL_STAGES.filter((s) => s !== lead.stage).map((s) => {
           const color = getKanbanColumnColor(s);
@@ -50,7 +49,7 @@ function KanbanCard({
               style={{ borderColor: color, color }}
               className="text-[9px] font-medium border rounded-full px-1.5 py-0.5 hover:opacity-80 transition-opacity truncate max-w-[80px]"
             >
-              {s}
+              {FUNNEL_STAGE_LABELS[s]}
             </button>
           );
         })}
@@ -62,7 +61,7 @@ function KanbanCard({
 export default function KanbanPage() {
   const qc = useQueryClient();
   const [lostModal, setLostModal] = useState<{ lead: Lead; targetStage: FunnelStage } | null>(null);
-  const [motivoPerdido, setMotivoPerdido] = useState("");
+  const [lostReason, setLostReason] = useState("");
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["leads"],
@@ -80,9 +79,9 @@ export default function KanbanPage() {
   });
 
   function handleMoveStage(lead: Lead, stage: FunnelStage) {
-    if (stage === "Perdido") {
+    if (stage === "Lost") {
       setLostModal({ lead, targetStage: stage });
-      setMotivoPerdido("");
+      setLostReason("");
       return;
     }
     stageMutation.mutate({ id: lead.id, stage: stageToApi[stage] });
@@ -91,11 +90,11 @@ export default function KanbanPage() {
   function confirmLost() {
     if (!lostModal) return;
     stageMutation.mutate(
-      { id: lostModal.lead.id, stage: "perdido", reason: motivoPerdido },
+      { id: lostModal.lead.id, stage: "perdido", reason: lostReason },
       {
         onSettled: () => {
           setLostModal(null);
-          setMotivoPerdido("");
+          setLostReason("");
         },
       }
     );
@@ -103,7 +102,6 @@ export default function KanbanPage() {
 
   return (
     <div className="p-4 sm:p-6 h-full flex flex-col space-y-4">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--foreground)]">Funil de Vendas</h1>
         <p className="text-sm text-[var(--text-secondary)] mt-0.5">
@@ -111,7 +109,6 @@ export default function KanbanPage() {
         </p>
       </div>
 
-      {/* Board */}
       <div className="flex gap-3 overflow-x-auto pb-4 flex-1">
         {FUNNEL_STAGES.map((stage) => {
           const stageLeads = leads.filter((l) => l.stage === stage);
@@ -121,9 +118,8 @@ export default function KanbanPage() {
               key={stage}
               className="flex-shrink-0 w-56 flex flex-col gap-2 bg-[var(--muted)] rounded-2xl p-3"
             >
-              {/* Column header */}
               <div className="flex items-center justify-between border-l-[3px] pl-2" style={{ borderLeftColor: color }}>
-                <span className="text-sm font-semibold text-[var(--foreground)] truncate">{stage}</span>
+                <span className="text-sm font-semibold text-[var(--foreground)] truncate">{FUNNEL_STAGE_LABELS[stage]}</span>
                 <span
                   className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                   style={{ backgroundColor: color }}
@@ -132,7 +128,6 @@ export default function KanbanPage() {
                 </span>
               </div>
 
-              {/* Cards */}
               <div className="flex flex-col gap-2 overflow-y-auto">
                 {isLoading ? (
                   Array.from({ length: 2 }).map((_, i) => (
@@ -149,21 +144,11 @@ export default function KanbanPage() {
                   ))
                 )}
               </div>
-
-              {stage === "Perdido" && stageLeads.length > 0 && (
-                <Link
-                  href="/perdidos"
-                  className="text-xs font-medium text-[var(--danger)] border border-[var(--danger)] rounded-lg py-1.5 text-center hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                >
-                  Ver {stageLeads.length} perdido(s)
-                </Link>
-              )}
             </div>
           );
         })}
       </div>
 
-      {/* Lost reason modal */}
       <Dialog open={!!lostModal} onOpenChange={() => setLostModal(null)}>
         <DialogContent className="bg-[var(--card)] border-[var(--border)]">
           <DialogHeader>
@@ -174,8 +159,8 @@ export default function KanbanPage() {
           </p>
           <Input
             placeholder="Ex: preço, sem interesse, concorrência..."
-            value={motivoPerdido}
-            onChange={(e) => setMotivoPerdido(e.target.value)}
+            value={lostReason}
+            onChange={(e) => setLostReason(e.target.value)}
             className="bg-[var(--background)] border-[var(--border)]"
           />
           <div className="flex gap-3 mt-2">

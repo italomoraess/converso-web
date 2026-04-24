@@ -1,43 +1,45 @@
 export type LeadOrigin =
   | "Instagram"
-  | "Indicação"
+  | "Referral"
   | "Facebook"
   | "WhatsApp"
   | "Site"
-  | "Telefone"
-  | "Tráfego pago"
-  | "Rua"
-  | "Outro";
+  | "Phone"
+  | "PaidTraffic"
+  | "Street"
+  | "Other";
 
 export type FunnelStage =
-  | "Novo Lead"
-  | "Em Contato"
-  | "Proposta Enviada"
-  | "Em Negociação"
-  | "Fechado"
-  | "Perdido";
+  | "New Lead"
+  | "In Contact"
+  | "Proposal Sent"
+  | "Negotiating"
+  | "Closed"
+  | "Lost";
 
 export type TaskType =
-  | "Ligação"
-  | "Visita"
-  | "Reunião"
-  | "Retornar proposta"
-  | "Outro";
+  | "Call"
+  | "Visit"
+  | "Meeting"
+  | "Follow Up"
+  | "Other";
 
-export type TransactionType = "entrada" | "saida";
+export type TransactionType = "income" | "expense";
+
+export type ApiTransactionType = "entrada" | "saida";
 
 export interface Lead {
   id: string;
-  nome: string;
-  telefone: string;
-  cpfCnpj?: string;
+  name: string;
+  phone: string;
+  taxId?: string;
   email?: string;
-  origem: LeadOrigin;
-  localizacao?: string;
-  observacoes?: string;
-  vendaRecorrente: boolean;
+  origin: LeadOrigin;
+  location?: string;
+  notes?: string;
+  recurringDeal: boolean;
   stage: FunnelStage;
-  motivoPerdido?: string;
+  lostReason?: string;
   dealValue?: number;
   createdAt: string;
   updatedAt: string;
@@ -111,33 +113,62 @@ export interface AuthSession {
 }
 
 export const FUNNEL_STAGES: FunnelStage[] = [
-  "Novo Lead",
-  "Em Contato",
-  "Proposta Enviada",
-  "Em Negociação",
-  "Fechado",
-  "Perdido",
+  "New Lead",
+  "In Contact",
+  "Proposal Sent",
+  "Negotiating",
+  "Closed",
+  "Lost",
 ];
+
+export const FUNNEL_STAGE_LABELS: Record<FunnelStage, string> = {
+  "New Lead": "Novo Lead",
+  "In Contact": "Em Contato",
+  "Proposal Sent": "Proposta Enviada",
+  "Negotiating": "Em Negociação",
+  "Closed": "Fechado",
+  "Lost": "Perdido",
+};
 
 export const LEAD_ORIGINS: LeadOrigin[] = [
   "Instagram",
-  "Indicação",
+  "Referral",
   "Facebook",
   "WhatsApp",
   "Site",
-  "Telefone",
-  "Tráfego pago",
-  "Rua",
-  "Outro",
+  "Phone",
+  "PaidTraffic",
+  "Street",
+  "Other",
 ];
 
+export const LEAD_ORIGIN_LABELS: Record<LeadOrigin, string> = {
+  Instagram: "Instagram",
+  Referral: "Indicação",
+  Facebook: "Facebook",
+  WhatsApp: "WhatsApp",
+  Site: "Site",
+  Phone: "Telefone",
+  PaidTraffic: "Tráfego pago",
+  Street: "Rua",
+  Other: "Outro",
+};
+
 export const TASK_TYPES: TaskType[] = [
-  "Ligação",
-  "Visita",
-  "Reunião",
-  "Retornar proposta",
-  "Outro",
+  "Call",
+  "Visit",
+  "Meeting",
+  "Follow Up",
+  "Other",
 ];
+
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  Call: "Ligação",
+  Visit: "Visita",
+  Meeting: "Reunião",
+  "Follow Up": "Retornar proposta",
+  Other: "Outro",
+};
 
 // API types (snake_case from backend)
 export interface ApiLead {
@@ -176,7 +207,7 @@ export interface ApiAppointment {
 export interface ApiFinanceCategory {
   id: string;
   name: string;
-  type: TransactionType;
+  type: ApiTransactionType;
   color?: string;
   createdAt: string;
 }
@@ -184,7 +215,7 @@ export interface ApiFinanceCategory {
 export interface ApiTransaction {
   id: string;
   categoryId: string;
-  type: TransactionType;
+  type: ApiTransactionType;
   amount: string;
   description?: string;
   date: string;
@@ -217,5 +248,5 @@ export interface FinanceSummary {
   income: number;
   expense: number;
   balance: number;
-  byCategory: Array<{ name: string; amount: number; type: TransactionType }>;
+  byCategory: Array<{ name: string; amount: number; type: ApiTransactionType }>;
 }

@@ -31,14 +31,13 @@ export default function FinanceiroPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [showNew, setShowNew] = useState(false);
-  const [txType, setTxType] = useState<TransactionType>("entrada");
+  const [txType, setTxType] = useState<TransactionType>("income");
 
-  // Form
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [txDate, setTxDate] = useState(new Date().toISOString().slice(0, 10));
-  const [formType, setFormType] = useState<TransactionType>("entrada");
+  const [formType, setFormType] = useState<TransactionType>("income");
 
   const qc = useQueryClient();
 
@@ -114,7 +113,6 @@ export default function FinanceiroPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Financeiro</h1>
@@ -129,7 +127,6 @@ export default function FinanceiroPage() {
         </Button>
       </div>
 
-      {/* Month selector */}
       <div className="flex items-center gap-3">
         <button onClick={prevMonth} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--muted)] transition-colors">
           <ChevronLeft size={16} />
@@ -142,7 +139,6 @@ export default function FinanceiroPage() {
         </button>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-4 border-[var(--border)] bg-[var(--card)] space-y-1">
           <div className="flex items-center gap-2">
@@ -179,11 +175,10 @@ export default function FinanceiroPage() {
         </Card>
       </div>
 
-      {/* Transactions */}
       <Tabs value={txType} onValueChange={(v) => setTxType(v as TransactionType)}>
         <TabsList className="bg-[var(--muted)]">
-          <TabsTrigger value="entrada" className="data-[state=active]:bg-[var(--card)]">Receitas</TabsTrigger>
-          <TabsTrigger value="saida" className="data-[state=active]:bg-[var(--card)]">Despesas</TabsTrigger>
+          <TabsTrigger value="income" className="data-[state=active]:bg-[var(--card)]">Receitas</TabsTrigger>
+          <TabsTrigger value="expense" className="data-[state=active]:bg-[var(--card)]">Despesas</TabsTrigger>
         </TabsList>
 
         <TabsContent value={txType} className="mt-3">
@@ -198,7 +193,7 @@ export default function FinanceiroPage() {
                 <div key={tx.id} className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-light)] last:border-0 group">
                   <div className={cn(
                     "w-2 h-2 rounded-full shrink-0",
-                    tx.type === "entrada" ? "bg-emerald-500" : "bg-red-500"
+                    tx.type === "income" ? "bg-emerald-500" : "bg-red-500"
                   )} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[var(--foreground)] truncate">
@@ -210,13 +205,13 @@ export default function FinanceiroPage() {
                   </div>
                   <span className={cn(
                     "text-sm font-bold shrink-0",
-                    tx.type === "entrada" ? "text-emerald-600" : "text-red-500"
+                    tx.type === "income" ? "text-emerald-600" : "text-red-500"
                   )}>
-                    {tx.type === "entrada" ? "+" : "-"}{formatCurrency(tx.value)}
+                    {tx.type === "income" ? "+" : "-"}{formatCurrency(tx.value)}
                   </span>
                   <button
                     onClick={() => deleteMutation.mutate(tx.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -227,7 +222,6 @@ export default function FinanceiroPage() {
         </TabsContent>
       </Tabs>
 
-      {/* New Transaction Modal */}
       <Dialog open={showNew} onOpenChange={setShowNew}>
         <DialogContent className="bg-[var(--card)] border-[var(--border)]">
           <DialogHeader>
@@ -239,10 +233,10 @@ export default function FinanceiroPage() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => { setFormType("entrada"); setCategoryId(""); }}
+                  onClick={() => { setFormType("income"); setCategoryId(""); }}
                   className={cn(
                     "py-2 rounded-xl border text-sm font-medium transition-colors",
-                    formType === "entrada"
+                    formType === "income"
                       ? "bg-emerald-100 border-emerald-500 text-emerald-700 dark:bg-emerald-950"
                       : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--muted)]"
                   )}
@@ -251,10 +245,10 @@ export default function FinanceiroPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setFormType("saida"); setCategoryId(""); }}
+                  onClick={() => { setFormType("expense"); setCategoryId(""); }}
                   className={cn(
                     "py-2 rounded-xl border text-sm font-medium transition-colors",
-                    formType === "saida"
+                    formType === "expense"
                       ? "bg-red-100 border-red-500 text-red-700 dark:bg-red-950"
                       : "border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--muted)]"
                   )}

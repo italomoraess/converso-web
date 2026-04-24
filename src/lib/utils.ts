@@ -50,17 +50,17 @@ export function getStageBadgeStyle(stage: FunnelStage): {
   label: string;
 } {
   switch (stage) {
-    case "Novo Lead":
+    case "New Lead":
       return { bg: "bg-blue-100 dark:bg-blue-950", text: "text-blue-700 dark:text-blue-300", label: "Novo Lead" };
-    case "Em Contato":
+    case "In Contact":
       return { bg: "bg-amber-100 dark:bg-amber-950", text: "text-amber-800 dark:text-amber-300", label: "Em Contato" };
-    case "Proposta Enviada":
+    case "Proposal Sent":
       return { bg: "bg-violet-100 dark:bg-violet-950", text: "text-violet-700 dark:text-violet-300", label: "Proposta Enviada" };
-    case "Em Negociação":
+    case "Negotiating":
       return { bg: "bg-pink-100 dark:bg-pink-950", text: "text-pink-700 dark:text-pink-300", label: "Em Negociação" };
-    case "Fechado":
+    case "Closed":
       return { bg: "bg-emerald-100 dark:bg-emerald-950", text: "text-emerald-700 dark:text-emerald-300", label: "Fechado ✓" };
-    case "Perdido":
+    case "Lost":
       return { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400", label: "Perdido" };
     default:
       return { bg: "bg-gray-100", text: "text-gray-600", label: stage };
@@ -74,7 +74,7 @@ export function getOriginBadgeStyle(origin: LeadOrigin): {
   switch (origin) {
     case "Instagram":
       return { bg: "bg-pink-100 dark:bg-pink-950", text: "text-pink-700 dark:text-pink-300" };
-    case "Indicação":
+    case "Referral":
       return { bg: "bg-emerald-100 dark:bg-emerald-950", text: "text-emerald-700 dark:text-emerald-300" };
     case "Facebook":
       return { bg: "bg-blue-100 dark:bg-blue-950", text: "text-blue-700 dark:text-blue-300" };
@@ -82,11 +82,11 @@ export function getOriginBadgeStyle(origin: LeadOrigin): {
       return { bg: "bg-green-100 dark:bg-green-950", text: "text-green-700 dark:text-green-300" };
     case "Site":
       return { bg: "bg-cyan-100 dark:bg-cyan-950", text: "text-cyan-700 dark:text-cyan-300" };
-    case "Telefone":
+    case "Phone":
       return { bg: "bg-indigo-100 dark:bg-indigo-950", text: "text-indigo-700 dark:text-indigo-300" };
-    case "Tráfego pago":
+    case "PaidTraffic":
       return { bg: "bg-blue-100 dark:bg-blue-950", text: "text-blue-700 dark:text-blue-300" };
-    case "Rua":
+    case "Street":
       return { bg: "bg-amber-100 dark:bg-amber-950", text: "text-amber-700 dark:text-amber-300" };
     default:
       return { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-600 dark:text-gray-400" };
@@ -95,12 +95,12 @@ export function getOriginBadgeStyle(origin: LeadOrigin): {
 
 export function getKanbanColumnColor(stage: FunnelStage): string {
   switch (stage) {
-    case "Novo Lead": return "#1a56db";
-    case "Em Contato": return "#f59e0b";
-    case "Proposta Enviada": return "#8b5cf6";
-    case "Em Negociação": return "#ec4899";
-    case "Fechado": return "#10b981";
-    case "Perdido": return "#6b7280";
+    case "New Lead": return "#1a56db";
+    case "In Contact": return "#f59e0b";
+    case "Proposal Sent": return "#8b5cf6";
+    case "Negotiating": return "#ec4899";
+    case "Closed": return "#10b981";
+    case "Lost": return "#6b7280";
     default: return "#6b7280";
   }
 }

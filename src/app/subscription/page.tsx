@@ -2,8 +2,8 @@
 
 import { signOut } from "next-auth/react";
 import { Zap, Check, Crown, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CheckoutButton } from "@/components/checkout-button";
 
 const features = [
   "Leads ilimitados",
@@ -40,6 +40,14 @@ export default function AssinaturaPage() {
             </div>
           </div>
 
+          <div className="space-y-1">
+            <div className="flex items-end gap-1">
+              <span className="text-3xl font-extrabold text-[var(--foreground)]">R$ 49</span>
+              <span className="text-[var(--text-secondary)] mb-0.5">/mês</span>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)]">3 dias grátis · cancele quando quiser</p>
+          </div>
+
           <div className="space-y-3">
             {features.map((f) => (
               <div key={f} className="flex items-center gap-3">
@@ -51,10 +59,10 @@ export default function AssinaturaPage() {
             ))}
           </div>
 
-          <Button className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold h-12 gap-2">
+          <CheckoutButton className="flex items-center justify-center gap-2 w-full h-12 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
             <Crown size={16} />
             Assinar agora
-          </Button>
+          </CheckoutButton>
         </Card>
 
         <button

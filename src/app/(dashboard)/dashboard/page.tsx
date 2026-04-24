@@ -31,23 +31,24 @@ import {
   getInitials,
   cn,
 } from "@/lib/utils";
+import { LEAD_ORIGIN_LABELS, TASK_TYPE_LABELS, type TaskType } from "@/types";
 import type { Lead, Task } from "@/types";
 
 const FUNNEL_STAGES = [
-  { label: "Novo Lead", color: "#1a56db" },
-  { label: "Em Contato", color: "#f59e0b" },
-  { label: "Proposta Enviada", color: "#8b5cf6" },
-  { label: "Em Negociação", color: "#ec4899" },
-  { label: "Fechado ✓", stage: "Fechado", color: "#10b981" },
-  { label: "Perdido", color: "#6b7280" },
-];
+  { label: "Novo Lead",       stage: "New Lead",       color: "#1a56db" },
+  { label: "Em Contato",      stage: "In Contact",     color: "#f59e0b" },
+  { label: "Proposta Enviada", stage: "Proposal Sent", color: "#8b5cf6" },
+  { label: "Em Negociação",   stage: "Negotiating",    color: "#ec4899" },
+  { label: "Fechado ✓",       stage: "Closed",         color: "#10b981" },
+  { label: "Perdido",         stage: "Lost",           color: "#6b7280" },
+] as const;
 
-const TASK_TYPE_ICONS: Record<string, React.ElementType> = {
-  Ligação: Phone,
-  Visita: MapPin,
-  Reunião: Users,
-  "Retornar proposta": FileText,
-  Outro: CheckSquare,
+const TASK_TYPE_ICONS: Record<TaskType, React.ElementType> = {
+  Call: Phone,
+  Visit: MapPin,
+  Meeting: Users,
+  "Follow Up": FileText,
+  Other: CheckSquare,
 };
 
 function StatCard({
@@ -160,8 +161,8 @@ function TodayTaskRow({
 
 function RecentLeadRow({ lead }: { lead: Lead }) {
   const badge = getStageBadgeStyle(lead.stage);
-  const origin = getOriginBadgeStyle(lead.origem);
-  const initials = getInitials(lead.nome);
+  const origin = getOriginBadgeStyle(lead.origin);
+  const initials = getInitials(lead.name);
 
   return (
     <Link
@@ -172,10 +173,10 @@ function RecentLeadRow({ lead }: { lead: Lead }) {
         <span className="text-sm font-bold text-[var(--primary)]">{initials}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--foreground)] truncate">{lead.nome}</p>
+        <p className="text-sm font-medium text-[var(--foreground)] truncate">{lead.name}</p>
         <div className="flex gap-1.5 mt-0.5">
           <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full", origin.bg, origin.text)}>
-            {lead.origem}
+            {LEAD_ORIGIN_LABELS[lead.origin]}
           </span>
           <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded-full", badge.bg, badge.text)}>
             {badge.label}
@@ -183,7 +184,7 @@ function RecentLeadRow({ lead }: { lead: Lead }) {
         </div>
       </div>
       <a
-        href={getWhatsAppUrl(lead.telefone)}
+        href={getWhatsAppUrl(lead.phone)}
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
@@ -228,8 +229,8 @@ export default function DashboardPage() {
     return leads.filter((l) => l.createdAt >= from);
   }, [leads, now]);
 
-  const closedLeads = leads.filter((l) => l.stage === "Fechado");
-  const newLeads = leads.filter((l) => l.stage === "Novo Lead").length;
+  const closedLeads = leads.filter((l) => l.stage === "Closed");
+  const newLeads = leads.filter((l) => l.stage === "New Lead").length;
   const convRate =
     leads.length > 0 ? Math.round((closedLeads.length / leads.length) * 100) : 0;
 
@@ -256,16 +257,16 @@ export default function DashboardPage() {
         <StatCard icon={Users} label="Total Leads" value={leads.length} sub={`+${thisMonthLeads.length} este mês`} color="var(--primary)" href="/leads" />
         <StatCard icon={TrendingUp} label="Fechados" value={closedLeads.length} sub={`${convRate}% conversão`} color="var(--success)" href="/kanban" />
         <StatCard icon={Clock} label="Novos" value={newLeads} sub="aguardando contato" color="var(--warning)" href="/kanban" />
-        <StatCard icon={Calendar} label="Tarefas Hoje" value={todayTasks.length} sub={todayTasks.length === 0 ? "nenhuma pendente" : "pendentes"} color={todayTasks.length > 0 ? "var(--danger)" : "var(--success)"} href="/agenda" />
+        <StatCard icon={Calendar} label="Tarefas Hoje" value={todayTasks.length} sub={todayTasks.length === 0 ? "nenhuma pendente" : "pendentes"} color={todayTasks.length > 0 ? "var(--danger)" : "var(--success)"} href="/schedule" />
       </div>
 
       <div className="space-y-3">
         <h2 className="text-base font-bold text-[var(--foreground)]">Ações Rápidas</h2>
         <div className="grid grid-cols-4 gap-2">
           <QuickAction icon={UserPlus} label="Novo Lead" color="var(--primary)" href="/leads/new" />
-          <QuickAction icon={Calendar} label="Nova Tarefa" color="var(--secondary)" href="/agenda?new=1" />
+          <QuickAction icon={Calendar} label="Nova Tarefa" color="var(--secondary)" href="/schedule?new=1" />
           <QuickAction icon={Kanban} label="Ver Funil" color="#8b5cf6" href="/kanban" />
-          <QuickAction icon={BarChart2} label="Relatórios" color="var(--success)" href="/relatorios" />
+          <QuickAction icon={BarChart2} label="Relatórios" color="var(--success)" href="/reports" />
         </div>
       </div>
 
@@ -274,14 +275,14 @@ export default function DashboardPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-[var(--foreground)]">Tarefas de Hoje</h2>
-              <Link href="/agenda" className="text-xs font-medium text-[var(--primary)] hover:underline">Ver todas</Link>
+              <Link href="/schedule" className="text-xs font-medium text-[var(--primary)] hover:underline">Ver todas</Link>
             </div>
             <Card className="border-[var(--border)] bg-[var(--card)] overflow-hidden">
               {todayTasks.slice(0, 4).map((t) => (
                 <TodayTaskRow key={t.id} task={t} onToggle={(id) => completeMutation.mutate(id)} />
               ))}
               {todayTasks.length > 4 && (
-                <Link href="/agenda" className="block px-4 py-3 text-center text-sm font-medium text-[var(--primary)] hover:bg-[var(--muted)]/50 transition-colors">
+                <Link href="/schedule" className="block px-4 py-3 text-center text-sm font-medium text-[var(--primary)] hover:bg-[var(--muted)]/50 transition-colors">
                   +{todayTasks.length - 4} mais tarefas
                 </Link>
               )}
@@ -293,11 +294,10 @@ export default function DashboardPage() {
           <h2 className="text-base font-bold text-[var(--foreground)]">Funil de Vendas</h2>
           <Card className="border-[var(--border)] bg-[var(--card)] p-4 space-y-3">
             {FUNNEL_STAGES.map((item) => {
-              const stageName = item.stage ?? item.label;
-              const count = leads.filter((l) => l.stage === stageName).length;
+              const count = leads.filter((l) => l.stage === item.stage).length;
               const pct = leads.length > 0 ? (count / leads.length) * 100 : 0;
               return (
-                <Link key={item.label} href="/kanban" className="flex items-center gap-3 group">
+                <Link key={item.stage} href="/kanban" className="flex items-center gap-3 group">
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                   <span className="w-36 text-sm text-[var(--foreground)] truncate">{item.label}</span>
                   <div className="flex-1 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">

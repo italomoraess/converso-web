@@ -186,7 +186,7 @@ export default function CatalogoPage() {
                           onClick={() => {
                             if (confirm("Remover produto?")) deleteProductMutation.mutate(product.id);
                           }}
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -234,7 +234,7 @@ export default function CatalogoPage() {
                           deleteCategoryMutation.mutate(cat.id);
                         }
                       }}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 transition-colors"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors"
                     >
                       <Trash2 size={13} />
                     </button>

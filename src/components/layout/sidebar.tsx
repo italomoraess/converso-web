@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
 import {
   Home,
   Users,
@@ -15,6 +16,8 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useState } from "react";
 import { cn, getInitials } from "@/lib/utils";
@@ -24,19 +27,21 @@ const navItems = [
   { href: "/dashboard", icon: Home, label: "Início" },
   { href: "/leads", icon: Users, label: "Leads" },
   { href: "/kanban", icon: Kanban, label: "Funil" },
-  { href: "/agenda", icon: Calendar, label: "Agenda" },
-  { href: "/financeiro", icon: DollarSign, label: "Financeiro" },
-  { href: "/catalogo", icon: Package, label: "Catálogo" },
-  { href: "/relatorios", icon: BarChart2, label: "Relatórios" },
+  { href: "/schedule", icon: Calendar, label: "Agenda" },
+  { href: "/finance", icon: DollarSign, label: "Financeiro" },
+  { href: "/catalog", icon: Package, label: "Catálogo" },
+  { href: "/reports", icon: BarChart2, label: "Relatórios" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const { resolvedTheme, setTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
 
   const user = session?.user;
   const initials = getInitials(user?.name ?? undefined, user?.email ?? undefined);
+  const isDark = resolvedTheme === "dark";
 
   return (
     <aside
@@ -91,8 +96,9 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="border-t border-[var(--border)] p-2 space-y-0.5">
+        {/* Profile */}
         <Link
-          href="/perfil"
+          href="/profile"
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors w-full",
             collapsed && "justify-center px-2"
@@ -118,10 +124,28 @@ export function Sidebar() {
           )}
         </Link>
 
+        {/* Theme toggle */}
+        <button
+          onClick={() => setTheme(isDark ? "light" : "dark")}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] transition-colors w-full",
+            collapsed && "justify-center px-2"
+          )}
+          title={collapsed ? (isDark ? "Modo claro" : "Modo escuro") : undefined}
+        >
+          {isDark ? (
+            <Sun size={18} className="shrink-0" />
+          ) : (
+            <Moon size={18} className="shrink-0" />
+          )}
+          {!collapsed && <span>{isDark ? "Modo claro" : "Modo escuro"}</span>}
+        </button>
+
+        {/* Logout */}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 transition-colors w-full",
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors w-full",
             collapsed && "justify-center px-2"
           )}
           title={collapsed ? "Sair" : undefined}
@@ -130,6 +154,7 @@ export function Sidebar() {
           {!collapsed && <span>Sair</span>}
         </button>
 
+        {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed((v) => !v)}
           className={cn(

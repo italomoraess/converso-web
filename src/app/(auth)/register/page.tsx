@@ -146,7 +146,7 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600">
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600 dark:bg-red-950/50 dark:border-red-900 dark:text-red-400">
               <AlertCircle size={14} className="shrink-0" />
               <span>{error}</span>
             </div>

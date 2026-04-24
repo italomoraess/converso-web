@@ -18,21 +18,28 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { LEAD_ORIGINS, FUNNEL_STAGES, type FunnelStage, type LeadOrigin } from "@/types";
+import {
+  LEAD_ORIGINS,
+  LEAD_ORIGIN_LABELS,
+  FUNNEL_STAGES,
+  FUNNEL_STAGE_LABELS,
+  type FunnelStage,
+  type LeadOrigin,
+} from "@/types";
 import { toast } from "sonner";
 
 export default function NewLeadPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const [nome, setNome] = useState("");
-  const [telefone, setTelefone] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [origem, setOrigem] = useState<LeadOrigin>("Instagram");
-  const [stage, setStage] = useState<FunnelStage>("Novo Lead");
-  const [localizacao, setLocalizacao] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [vendaRecorrente, setVendaRecorrente] = useState(false);
+  const [origin, setOrigin] = useState<LeadOrigin>("Instagram");
+  const [stage, setStage] = useState<FunnelStage>("New Lead");
+  const [location, setLocation] = useState("");
+  const [notes, setNotes] = useState("");
+  const [recurringDeal, setRecurringDeal] = useState(false);
   const [dealValue, setDealValue] = useState("");
 
   const mutation = useMutation({
@@ -47,19 +54,19 @@ export default function NewLeadPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim() || !telefone.trim()) {
+    if (!name.trim() || !phone.trim()) {
       toast.error("Nome e telefone são obrigatórios.");
       return;
     }
     const body = localLeadToApi({
-      nome: nome.trim(),
-      telefone: telefone.trim(),
+      name: name.trim(),
+      phone: phone.trim(),
       email: email.trim() || undefined,
-      origem,
+      origin,
       stage,
-      localizacao: localizacao.trim() || undefined,
-      observacoes: observacoes.trim() || undefined,
-      vendaRecorrente,
+      location: location.trim() || undefined,
+      notes: notes.trim() || undefined,
+      recurringDeal,
       dealValue: dealValue ? parseFloat(dealValue) : undefined,
     });
     mutation.mutate(body);
@@ -67,7 +74,6 @@ export default function NewLeadPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
@@ -83,7 +89,6 @@ export default function NewLeadPage() {
 
       <form onSubmit={handleSubmit}>
         <Card className="border-[var(--border)] bg-[var(--card)] p-5 space-y-4">
-          {/* Nome + Telefone */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm text-[var(--text-secondary)]">
@@ -91,8 +96,8 @@ export default function NewLeadPage() {
               </Label>
               <Input
                 placeholder="Nome do cliente"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="bg-[var(--background)] border-[var(--border)]"
                 required
               />
@@ -103,8 +108,8 @@ export default function NewLeadPage() {
               </Label>
               <Input
                 placeholder="(11) 99999-9999"
-                value={telefone}
-                onChange={(e) => setTelefone(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="bg-[var(--background)] border-[var(--border)]"
                 type="tel"
                 required
@@ -112,7 +117,6 @@ export default function NewLeadPage() {
             </div>
           </div>
 
-          {/* Email */}
           <div className="space-y-1.5">
             <Label className="text-sm text-[var(--text-secondary)]">E-mail</Label>
             <Input
@@ -124,17 +128,16 @@ export default function NewLeadPage() {
             />
           </div>
 
-          {/* Origem + Stage */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm text-[var(--text-secondary)]">Origem</Label>
-              <Select value={origem} onValueChange={(v) => setOrigem(v as LeadOrigin)}>
+              <Select value={origin} onValueChange={(v) => setOrigin(v as LeadOrigin)}>
                 <SelectTrigger className="bg-[var(--background)] border-[var(--border)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {LEAD_ORIGINS.map((o) => (
-                    <SelectItem key={o} value={o}>{o}</SelectItem>
+                    <SelectItem key={o} value={o}>{LEAD_ORIGIN_LABELS[o]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -147,21 +150,21 @@ export default function NewLeadPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {FUNNEL_STAGES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>{FUNNEL_STAGE_LABELS[s]}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Localização + Valor */}
+          {/* Location + Value */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm text-[var(--text-secondary)]">Localização</Label>
               <Input
                 placeholder="Cidade, bairro..."
-                value={localizacao}
-                onChange={(e) => setLocalizacao(e.target.value)}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 className="bg-[var(--background)] border-[var(--border)]"
               />
             </div>
@@ -179,31 +182,29 @@ export default function NewLeadPage() {
             </div>
           </div>
 
-          {/* Observações */}
+          {/* Notes */}
           <div className="space-y-1.5">
             <Label className="text-sm text-[var(--text-secondary)]">Observações</Label>
             <textarea
               placeholder="Anotações sobre o lead..."
-              value={observacoes}
-              onChange={(e) => setObservacoes(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
               rows={3}
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--background)] px-3 py-2.5 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--primary)] transition"
             />
           </div>
 
-          {/* Venda recorrente */}
           <div className="flex items-center justify-between py-2">
             <div>
               <p className="text-sm font-medium text-[var(--foreground)]">Venda recorrente</p>
               <p className="text-xs text-[var(--text-secondary)]">Cliente retorna periodicamente</p>
             </div>
             <Switch
-              checked={vendaRecorrente}
-              onCheckedChange={setVendaRecorrente}
+              checked={recurringDeal}
+              onCheckedChange={setRecurringDeal}
             />
           </div>
 
-          {/* Submit */}
           <div className="flex gap-3 pt-1">
             <Button
               type="button"

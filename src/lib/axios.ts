@@ -40,7 +40,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     if (error.response?.status === 402) {
       if (typeof window !== "undefined") {
-        window.location.href = "/assinatura";
+        window.location.href = "/subscription";
       }
       return Promise.reject(new Error("Plano ativo necessário."));
     }

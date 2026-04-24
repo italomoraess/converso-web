@@ -123,7 +123,7 @@ export default function PerfilPage() {
       <Button
         onClick={() => signOut({ callbackUrl: "/login" })}
         variant="outline"
-        className="w-full border-[var(--border)] text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 hover:border-red-200 gap-2 dark:hover:bg-red-950"
+        className="w-full border-[var(--border)] text-[var(--text-secondary)] hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-950/50 dark:hover:text-red-400 dark:hover:border-red-900 gap-2"
       >
         <LogOut size={16} />
         Sair da conta

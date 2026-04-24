@@ -1,13 +1,17 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/register", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/register", "/api/auth", "/subscription", "/success"];
+
+const PUBLIC_EXACT = ["/"];
 
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  const isPublic =
+    PUBLIC_EXACT.includes(pathname) ||
+    PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
-  if (!req.auth && !isPublic && pathname !== "/assinatura") {
+  if (!req.auth && !isPublic) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);

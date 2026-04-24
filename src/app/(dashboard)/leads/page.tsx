@@ -15,44 +15,41 @@ import {
   getInitials,
   cn,
 } from "@/lib/utils";
+import { LEAD_ORIGIN_LABELS } from "@/types";
 import type { Lead } from "@/types";
 import { toast } from "sonner";
 
 function LeadRow({ lead, onDelete }: { lead: Lead; onDelete: (id: string) => void }) {
   const badge = getStageBadgeStyle(lead.stage);
-  const origin = getOriginBadgeStyle(lead.origem);
-  const initials = getInitials(lead.nome);
+  const origin = getOriginBadgeStyle(lead.origin);
+  const initials = getInitials(lead.name);
 
   return (
     <Link
       href={`/leads/${lead.id}`}
       className="flex items-center gap-4 px-5 py-4 border-b border-[var(--border-light)] last:border-0 hover:bg-[var(--muted)]/40 transition-colors group"
     >
-      {/* Avatar */}
       <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center shrink-0">
         <span className="text-sm font-bold text-[var(--primary)]">{initials}</span>
       </div>
 
-      {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[var(--foreground)] truncate">{lead.nome}</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{lead.telefone}</p>
+        <p className="text-sm font-semibold text-[var(--foreground)] truncate">{lead.name}</p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">{lead.phone}</p>
       </div>
 
-      {/* Badges */}
       <div className="hidden sm:flex items-center gap-2">
         <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap", origin.bg, origin.text)}>
-          {lead.origem}
+          {LEAD_ORIGIN_LABELS[lead.origin]}
         </span>
         <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap", badge.bg, badge.text)}>
           {badge.label}
         </span>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <a
-          href={getWhatsAppUrl(lead.telefone)}
+          href={getWhatsAppUrl(lead.phone)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
@@ -66,7 +63,7 @@ function LeadRow({ lead, onDelete }: { lead: Lead; onDelete: (id: string) => voi
             e.stopPropagation();
             onDelete(lead.id);
           }}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 transition-colors"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors"
         >
           <Trash2 size={14} />
         </button>
@@ -98,16 +95,15 @@ export default function LeadsPage() {
     if (!q) return leads;
     return leads.filter(
       (l) =>
-        l.nome.toLowerCase().includes(q) ||
-        l.telefone.includes(q) ||
+        l.name.toLowerCase().includes(q) ||
+        l.phone.includes(q) ||
         l.email?.toLowerCase().includes(q) ||
-        l.origem.toLowerCase().includes(q)
+        l.origin.toLowerCase().includes(q)
     );
   }, [leads, search]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Leads</h1>
@@ -123,7 +119,6 @@ export default function LeadsPage() {
         </Link>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
         <Input
@@ -142,7 +137,6 @@ export default function LeadsPage() {
         )}
       </div>
 
-      {/* List */}
       {isLoading ? (
         <Card className="border-[var(--border)] bg-[var(--card)]">
           {Array.from({ length: 5 }).map((_, i) => (

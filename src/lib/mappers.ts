@@ -5,6 +5,8 @@ import type {
   Task,
   TaskType,
   Transaction,
+  TransactionType,
+  ApiTransactionType,
   CatalogProduct,
   ApiLead,
   ApiAppointment,
@@ -13,73 +15,84 @@ import type {
 } from "@/types";
 
 export const stageFromApi: Record<string, FunnelStage> = {
-  novo: "Novo Lead",
-  contatado: "Em Contato",
-  negociando: "Em Negociação",
-  fechado: "Fechado",
-  perdido: "Perdido",
+  novo: "New Lead",
+  contatado: "In Contact",
+  negociando: "Negotiating",
+  proposta: "Proposal Sent",
+  fechado: "Closed",
+  perdido: "Lost",
 };
 
 export const stageToApi: Record<FunnelStage, string> = {
-  "Novo Lead": "novo",
-  "Em Contato": "contatado",
-  "Proposta Enviada": "negociando",
-  "Em Negociação": "negociando",
-  Fechado: "fechado",
-  Perdido: "perdido",
+  "New Lead": "novo",
+  "In Contact": "contatado",
+  "Proposal Sent": "negociando",
+  "Negotiating": "negociando",
+  "Closed": "fechado",
+  "Lost": "perdido",
 };
 
 export const originFromApi: Record<string, LeadOrigin> = {
   instagram: "Instagram",
-  indicacao: "Indicação",
+  indicacao: "Referral",
   facebook: "Facebook",
   whatsapp: "WhatsApp",
   site: "Site",
-  telefone: "Telefone",
-  outro: "Outro",
+  telefone: "Phone",
+  outro: "Other",
 };
 
 export const originToApi: Record<LeadOrigin, string> = {
   Instagram: "instagram",
-  Indicação: "indicacao",
+  Referral: "indicacao",
   Facebook: "facebook",
   WhatsApp: "whatsapp",
   Site: "site",
-  Telefone: "telefone",
-  "Tráfego pago": "outro",
-  Rua: "outro",
-  Outro: "outro",
+  Phone: "telefone",
+  PaidTraffic: "outro",
+  Street: "outro",
+  Other: "outro",
 };
 
 export const taskTypeFromApi: Record<string, TaskType> = {
-  ligacao: "Ligação",
-  visita: "Visita",
-  reuniao: "Reunião",
-  retorno: "Retornar proposta",
-  outro: "Outro",
+  ligacao: "Call",
+  visita: "Visit",
+  reuniao: "Meeting",
+  retorno: "Follow Up",
+  outro: "Other",
 };
 
 export const taskTypeToApi: Record<TaskType, string> = {
-  Ligação: "ligacao",
-  Visita: "visita",
-  Reunião: "reuniao",
-  "Retornar proposta": "retorno",
-  Outro: "outro",
+  Call: "ligacao",
+  Visit: "visita",
+  Meeting: "reuniao",
+  "Follow Up": "retorno",
+  Other: "outro",
+};
+
+export const txTypeFromApi: Record<ApiTransactionType, TransactionType> = {
+  entrada: "income",
+  saida: "expense",
+};
+
+export const txTypeToApi: Record<TransactionType, ApiTransactionType> = {
+  income: "entrada",
+  expense: "saida",
 };
 
 export function apiLeadToLocal(a: ApiLead): Lead {
   return {
     id: a.id,
-    nome: a.name,
-    telefone: a.phone,
-    cpfCnpj: a.cpfCnpj,
+    name: a.name,
+    phone: a.phone,
+    taxId: a.cpfCnpj,
     email: a.email,
-    origem: originFromApi[a.origin] ?? "Outro",
-    localizacao: a.location,
-    observacoes: a.observations,
-    vendaRecorrente: a.recurringSale,
-    stage: stageFromApi[a.funnelStage] ?? "Novo Lead",
-    motivoPerdido: a.lostReason ?? undefined,
+    origin: originFromApi[a.origin] ?? "Other",
+    location: a.location,
+    notes: a.observations,
+    recurringDeal: a.recurringSale,
+    stage: stageFromApi[a.funnelStage] ?? "New Lead",
+    lostReason: a.lostReason ?? undefined,
     dealValue: a.dealValue ? parseFloat(a.dealValue) : undefined,
     createdAt: a.createdAt,
     updatedAt: a.updatedAt,
@@ -90,16 +103,16 @@ export function localLeadToApi(
   lead: Partial<Omit<Lead, "id" | "createdAt" | "updatedAt">>
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {};
-  if (lead.nome !== undefined) body.name = lead.nome;
-  if (lead.telefone !== undefined) body.phone = lead.telefone;
-  if (lead.cpfCnpj !== undefined) body.cpfCnpj = lead.cpfCnpj;
+  if (lead.name !== undefined) body.name = lead.name;
+  if (lead.phone !== undefined) body.phone = lead.phone;
+  if (lead.taxId !== undefined) body.cpfCnpj = lead.taxId;
   if (lead.email !== undefined) body.email = lead.email;
-  if (lead.origem !== undefined) body.origin = originToApi[lead.origem] ?? "outro";
-  if (lead.localizacao !== undefined) body.location = lead.localizacao;
-  if (lead.observacoes !== undefined) body.observations = lead.observacoes;
-  if (lead.vendaRecorrente !== undefined) body.recurringSale = lead.vendaRecorrente;
+  if (lead.origin !== undefined) body.origin = originToApi[lead.origin] ?? "outro";
+  if (lead.location !== undefined) body.location = lead.location;
+  if (lead.notes !== undefined) body.observations = lead.notes;
+  if (lead.recurringDeal !== undefined) body.recurringSale = lead.recurringDeal;
   if (lead.stage !== undefined) body.funnelStage = stageToApi[lead.stage] ?? "novo";
-  if (lead.motivoPerdido !== undefined) body.lostReason = lead.motivoPerdido;
+  if (lead.lostReason !== undefined) body.lostReason = lead.lostReason;
   if (lead.dealValue !== undefined) body.dealValue = lead.dealValue;
   return body;
 }
@@ -108,7 +121,7 @@ export function apiApptToLocal(a: ApiAppointment): Task {
   return {
     id: a.id,
     title: a.title,
-    type: taskTypeFromApi[a.type] ?? "Outro",
+    type: taskTypeFromApi[a.type] ?? "Other",
     date: a.date.slice(0, 10),
     startTime: a.startTime,
     endTime: a.endTime,
@@ -139,7 +152,7 @@ export function localTaskToApi(
 export function apiTxToLocal(t: ApiTransaction): Transaction {
   return {
     id: t.id,
-    type: t.type,
+    type: txTypeFromApi[t.type] ?? "income",
     value: parseFloat(t.amount),
     description: t.description ?? "",
     category: t.category?.name ?? t.categoryId,
