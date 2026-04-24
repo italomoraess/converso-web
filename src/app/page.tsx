@@ -149,7 +149,7 @@ export default function LandingPage() {
             Tudo que você precisa para vender mais
           </h2>
           <p className="text-[var(--text-secondary)] text-lg max-w-xl mx-auto">
-            Uma plataforma completa pensada para quem vende, não para quem programa.
+            Uma plataforma completa pensada para quem vende.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -235,7 +235,7 @@ export default function LandingPage() {
               </Link>
 
               <p className="text-center text-xs text-[var(--text-secondary)]">
-                Cancele quando quiser. Sem multa.
+                Cancele quando quiser.
               </p>
             </div>
           </div>
