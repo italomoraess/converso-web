@@ -4,6 +4,8 @@ import { getApiErrorMessage } from "./axios-public";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
+let redirectingToLogin = false;
+
 const ENVELOPE_KEYS = new Set(["data", "message", "success", "statusCode", "error"]);
 
 function unwrapEnvelope(payload: unknown): unknown {
@@ -46,10 +48,11 @@ api.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      // Token invalid — NextAuth session is stale, force re-login
-      if (typeof window !== "undefined") {
-        const { signOut } = await import("next-auth/react");
-        await signOut({ callbackUrl: "/login" });
+      if (typeof window !== "undefined" && !redirectingToLogin) {
+        redirectingToLogin = true;
+        import("next-auth/react").then(({ signOut }) => {
+          signOut({ callbackUrl: "/login" });
+        });
       }
       return Promise.reject(new Error("Sessão expirada. Faça login novamente."));
     }

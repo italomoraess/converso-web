@@ -14,7 +14,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 30 * 1000,
-            retry: 1,
+            retry: (failureCount, error) => {
+              const msg = error instanceof Error ? error.message : "";
+              if (msg.includes("Sessão expirada") || msg.includes("Plano ativo")) return false;
+              return failureCount < 1;
+            },
           },
         },
       })
