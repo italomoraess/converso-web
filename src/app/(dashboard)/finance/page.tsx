@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, TrendingUp, TrendingDown, DollarSign, ChevronLeft, ChevronRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { DatePicker } from "@/components/ui/date-picker";
 import { financeService } from "@/services/finance.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,12 +276,7 @@ export default function FinanceiroPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[var(--text-secondary)]">Data</Label>
-                <Input
-                  type="date"
-                  value={txDate}
-                  onChange={(e) => setTxDate(e.target.value)}
-                  className="bg-[var(--background)] border-[var(--border)]"
-                />
+                <DatePicker value={txDate} onChange={setTxDate} />
               </div>
             </div>
 
@@ -312,9 +309,7 @@ export default function FinanceiroPage() {
                 Cancelar
               </Button>
               <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white">
-                {createMutation.isPending ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Salvar"}
+                {createMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : "Salvar"}
               </Button>
             </div>
           </form>

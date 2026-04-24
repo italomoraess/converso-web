@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Package, Tag, Pencil } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { catalogService } from "@/services/catalog.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -305,7 +306,7 @@ export default function CatalogoPage() {
             <div className="flex gap-3">
               <Button type="button" variant="outline" onClick={() => { setShowNewProduct(false); resetProductForm(); }} className="flex-1 border-[var(--border)]">Cancelar</Button>
               <Button type="submit" disabled={createProductMutation.isPending} className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white">
-                {createProductMutation.isPending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Salvar"}
+                {createProductMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : "Salvar"}
               </Button>
             </div>
           </form>
@@ -340,7 +341,7 @@ export default function CatalogoPage() {
                 disabled={createCategoryMutation.isPending}
                 className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white"
               >
-                {createCategoryMutation.isPending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Salvar"}
+                {createCategoryMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : "Salvar"}
               </Button>
             </div>
           </div>

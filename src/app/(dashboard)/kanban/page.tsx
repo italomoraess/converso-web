@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Inbox, MessageCircle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { leadsService } from "@/services/leads.service";
 import { stageToApi } from "@/lib/mappers";
 import { FUNNEL_STAGES, FUNNEL_STAGE_LABELS, LEAD_ORIGIN_LABELS, type FunnelStage, type Lead } from "@/types";
@@ -176,9 +177,7 @@ export default function KanbanPage() {
               disabled={stageMutation.isPending}
               className="flex-1 bg-[var(--danger)] hover:bg-red-600 text-white"
             >
-              {stageMutation.isPending ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : "Confirmar"}
+              {stageMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : "Confirmar"}
             </Button>
           </div>
         </DialogContent>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Save } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { leadsService } from "@/services/leads.service";
 import { localLeadToApi } from "@/lib/mappers";
 import { Button } from "@/components/ui/button";
@@ -219,9 +220,7 @@ export default function NewLeadPage() {
               disabled={mutation.isPending}
               className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white gap-2"
             >
-              {mutation.isPending ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
+              {mutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : (
                 <>
                   <Save size={16} />
                   Salvar Lead

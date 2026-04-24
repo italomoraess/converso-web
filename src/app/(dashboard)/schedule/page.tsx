@@ -13,14 +13,17 @@ import {
   CheckSquare,
   Check,
   Trash2,
+  CalendarDays,
+  X,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
+import { DatePicker } from "@/components/ui/date-picker";
 import { appointmentsService } from "@/services/appointments.service";
 import { leadsService } from "@/services/leads.service";
 import { localTaskToApi } from "@/lib/mappers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -46,19 +49,23 @@ const MONTH_NAMES = [
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
+const DAY_NAMES = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
 
-function getFirstDayOfMonth(year: number, month: number) {
-  return new Date(year, month, 1).getDay();
+// Returns 0=Monday … 6=Sunday
+function getFirstDayMonBased(year: number, month: number) {
+  const day = new Date(year, month, 1).getDay(); // 0=Sun…6=Sat
+  return (day + 6) % 7;
 }
 
 export default function AgendaPage() {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [showNewTask, setShowNewTask] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -106,25 +113,23 @@ export default function AgendaPage() {
   function resetForm() {
     setTitle("");
     setTaskType("Call");
-    setTaskDate(selectedDate);
+    setTaskDate(selectedDate ?? todayISO());
     setLeadId("");
     setNotes("");
   }
 
   function handleCreateTask(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) {
-      toast.error("Informe o título da tarefa.");
-      return;
-    }
-    const body = localTaskToApi({
-      title: title.trim(),
-      type: taskType,
-      date: taskDate,
-      leadId: leadId || undefined,
-      notes: notes.trim() || undefined,
-    });
-    createMutation.mutate(body);
+    if (!title.trim()) { toast.error("Informe o título da tarefa."); return; }
+    createMutation.mutate(
+      localTaskToApi({
+        title: title.trim(),
+        type: taskType,
+        date: taskDate,
+        leadId: leadId || undefined,
+        notes: notes.trim() || undefined,
+      })
+    );
   }
 
   function prevMonth() {
@@ -137,36 +142,34 @@ export default function AgendaPage() {
     else setViewMonth(m => m + 1);
   }
 
+  function goToday() {
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
+    setSelectedDate(todayISO());
+  }
+
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
-  const firstDay = getFirstDayOfMonth(viewYear, viewMonth);
+  const firstDay = getFirstDayMonBased(viewYear, viewMonth);
+  const todayStr = todayISO();
 
   const tasksByDate = useMemo(() => {
     const map: Record<string, number> = {};
-    tasks.forEach((t) => {
-      if (!map[t.date]) map[t.date] = 0;
-      map[t.date]++;
-    });
+    tasks.forEach((t) => { map[t.date] = (map[t.date] ?? 0) + 1; });
     return map;
   }, [tasks]);
 
   const selectedTasks = useMemo(
-    () => tasks.filter((t) => t.date === selectedDate),
+    () => (selectedDate ? tasks.filter((t) => t.date === selectedDate) : []),
     [tasks, selectedDate]
   );
 
-  const todayStr = todayISO();
-
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-5">
+    <div className="p-6 flex flex-col gap-5" style={{ height: "100%" }}>
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Agenda</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            {tasks.length} tarefa{tasks.length !== 1 ? "s" : ""} no mês
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Agenda</h1>
         <Button
-          onClick={() => { setShowNewTask(true); setTaskDate(selectedDate); }}
+          onClick={() => { setShowNewTask(true); setTaskDate(selectedDate ?? todayISO()); }}
           className="bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white gap-2"
         >
           <Plus size={16} />
@@ -174,125 +177,217 @@ export default function AgendaPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <Card className="border-[var(--border)] bg-[var(--card)] p-4 lg:col-span-3">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={prevMonth} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--muted)] transition-colors">
-              <ChevronLeft size={16} />
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* ── Calendar ── */}
+        <div className="flex-1 min-w-0 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden flex flex-col">
+          {/* Nav bar */}
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]">
+            <button
+              onClick={prevMonth}
+              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--muted)] transition-colors text-[var(--muted-foreground)]"
+            >
+              <ChevronLeft size={15} />
             </button>
-            <span className="font-semibold text-[var(--foreground)]">
+            <button
+              onClick={nextMonth}
+              className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--muted)] transition-colors text-[var(--muted-foreground)]"
+            >
+              <ChevronRight size={15} />
+            </button>
+            <span className="font-semibold text-[var(--foreground)] text-sm ml-1">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </span>
-            <button onClick={nextMonth} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--muted)] transition-colors">
-              <ChevronRight size={16} />
+            <button
+              onClick={goToday}
+              className="ml-auto text-xs font-medium px-3 py-1 rounded-md border border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
+            >
+              Hoje
             </button>
           </div>
 
-          <div className="grid grid-cols-7 mb-1">
-            {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((d) => (
-              <div key={d} className="text-center text-[10px] font-semibold text-[var(--muted-foreground)] py-1">
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 border-b border-[var(--border)]">
+            {DAY_NAMES.map((d, i) => (
+              <div
+                key={d}
+                className={cn(
+                  "text-center text-[11px] font-semibold text-[var(--muted-foreground)] py-2",
+                  i >= 5 && "bg-[var(--muted)]/50"
+                )}
+              >
                 {d}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-0.5">
-            {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+          {/* Grid */}
+          <div className="grid grid-cols-7 flex-1 auto-rows-fr">
+            {/* Leading empty cells */}
+            {Array.from({ length: firstDay }).map((_, i) => (
+              <div
+                key={`e-${i}`}
+                className={cn(
+                  "border-b border-r border-[var(--border)]",
+                  i >= 5 && "bg-[var(--muted)]/30"
+                )}
+              />
+            ))}
+
+            {/* Day cells */}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
-              const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+              const colIdx = (firstDay + i) % 7;
+              const isWeekend = colIdx >= 5;
+              const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDate;
-              const hasTasks = !!tasksByDate[dateStr];
+              const count = tasksByDate[dateStr] ?? 0;
+
               return (
                 <button
                   key={day}
-                  onClick={() => setSelectedDate(dateStr)}
+                  onClick={() => setSelectedDate(isSelected ? null : dateStr)}
                   className={cn(
-                    "relative h-9 w-full rounded-lg text-sm font-medium transition-colors flex items-center justify-center",
-                    isSelected
-                      ? "bg-[var(--primary)] text-white"
-                      : isToday
-                      ? "bg-[var(--primary)]/10 text-[var(--primary)] font-bold"
-                      : "hover:bg-[var(--muted)] text-[var(--foreground)]"
+                    "relative border-b border-r border-[var(--border)] p-2 text-left transition-colors",
+                    "min-h-[90px] flex flex-col",
+                    isWeekend && "bg-[var(--muted)]/30",
+                    isSelected && "bg-[var(--primary)]/10",
+                    !isSelected && "hover:bg-[var(--muted)]/50"
                   )}
                 >
-                  {day}
-                  {hasTasks && !isSelected && (
-                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--primary)]" />
+                  <span
+                    className={cn(
+                      "inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-medium",
+                      isToday && "bg-[var(--primary)] text-white",
+                      !isToday && isSelected && "text-[var(--primary)] font-semibold",
+                      !isToday && !isSelected && "text-[var(--foreground)]"
+                    )}
+                  >
+                    {day}
+                  </span>
+
+                  {count > 0 && (
+                    <div className="absolute bottom-2 left-2 flex gap-1">
+                      {Array.from({ length: Math.min(count, 5) }).map((_, di) => (
+                        <span
+                          key={di}
+                          className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"
+                        />
+                      ))}
+                    </div>
                   )}
                 </button>
               );
             })}
           </div>
-        </Card>
-
-        <div className="lg:col-span-2 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-[var(--foreground)] text-sm">
-              {new Date(selectedDate + "T00:00:00").toLocaleDateString("pt-BR", { weekday:"long", day:"numeric", month:"short" })}
-            </h2>
-            <button
-              onClick={() => { setShowNewTask(true); setTaskDate(selectedDate); }}
-              className="text-xs text-[var(--primary)] font-medium hover:underline flex items-center gap-1"
-            >
-              <Plus size={12} /> Adicionar
-            </button>
-          </div>
-
-          {selectedTasks.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-center text-[var(--muted-foreground)]">
-              <CheckSquare size={24} />
-              <p className="text-sm">Nenhuma tarefa nesta data</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {selectedTasks.map((task) => {
-                const Icon = TASK_TYPE_ICONS[task.type] ?? CheckSquare;
-                return (
-                  <Card key={task.id} className={cn("border-[var(--border)] bg-[var(--card)] p-3 space-y-1", task.completed && "opacity-60")}>
-                    <div className="flex items-start gap-2">
-                      <button
-                        onClick={() => completeMutation.mutate(task.id)}
-                        className={cn(
-                          "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
-                          task.completed
-                            ? "bg-[var(--success)] border-[var(--success)]"
-                            : "border-[var(--border)] hover:border-[var(--success)]"
-                        )}
-                      >
-                        {task.completed && <Check size={11} color="#fff" />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm font-medium text-[var(--foreground)] truncate", task.completed && "line-through text-[var(--muted-foreground)]")}>
-                          {task.title}
-                        </p>
-                        {task.leadName && (
-                          <p className="text-xs text-[var(--primary)]">{task.leadName}</p>
-                        )}
-                        <div className="flex items-center gap-1 mt-1">
-                          <Icon size={11} className="text-[var(--muted-foreground)]" />
-                          <span className="text-[10px] text-[var(--muted-foreground)]">{TASK_TYPE_LABELS[task.type]}</span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => deleteMutation.mutate(task.id)}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted-foreground)] hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/50 dark:hover:text-red-400 transition-colors shrink-0"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                    {task.notes && (
-                      <p className="text-xs text-[var(--text-secondary)] pl-7">{task.notes}</p>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-          )}
         </div>
+
+        {/* ── Task detail panel ── */}
+        {selectedDate && (
+          <div className="w-72 shrink-0 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden flex flex-col">
+            {/* Panel header */}
+            <div className="px-4 py-3 border-b border-[var(--border)] flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm text-[var(--foreground)] capitalize truncate">
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("pt-BR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                  {selectedTasks.length} tarefa{selectedTasks.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => { setShowNewTask(true); setTaskDate(selectedDate); }}
+                  className="w-7 h-7 rounded-md flex items-center justify-center bg-[var(--primary)] text-white hover:bg-[var(--primary-dark)] transition-colors"
+                >
+                  <Plus size={14} />
+                </button>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="w-7 h-7 rounded-md flex items-center justify-center hover:bg-[var(--muted)] transition-colors text-[var(--muted-foreground)]"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Task list */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+              {selectedTasks.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 py-10 text-center text-[var(--muted-foreground)]">
+                  <CalendarDays size={24} />
+                  <p className="text-sm">Nenhuma tarefa neste dia</p>
+                  <button
+                    onClick={() => { setShowNewTask(true); setTaskDate(selectedDate); }}
+                    className="text-xs text-[var(--primary)] hover:underline"
+                  >
+                    Adicionar tarefa
+                  </button>
+                </div>
+              ) : (
+                selectedTasks.map((task) => {
+                  const Icon = TASK_TYPE_ICONS[task.type] ?? CheckSquare;
+                  return (
+                    <div
+                      key={task.id}
+                      className={cn(
+                        "rounded-lg border border-[var(--border)] bg-[var(--background)] p-3",
+                        task.completed && "opacity-60"
+                      )}
+                    >
+                      <div className="flex items-start gap-2">
+                        <button
+                          onClick={() => completeMutation.mutate(task.id)}
+                          className={cn(
+                            "mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors",
+                            task.completed
+                              ? "bg-[var(--success)] border-[var(--success)]"
+                              : "border-[var(--border)] hover:border-[var(--success)]"
+                          )}
+                        >
+                          {task.completed && <Check size={11} color="#fff" />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className={cn(
+                            "text-sm font-medium text-[var(--foreground)] truncate",
+                            task.completed && "line-through text-[var(--muted-foreground)]"
+                          )}>
+                            {task.title}
+                          </p>
+                          {task.leadName && (
+                            <p className="text-xs text-[var(--primary)] truncate">{task.leadName}</p>
+                          )}
+                          <div className="flex items-center gap-1 mt-1">
+                            <Icon size={11} className="text-[var(--muted-foreground)]" />
+                            <span className="text-[10px] text-[var(--muted-foreground)]">
+                              {TASK_TYPE_LABELS[task.type]}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => deleteMutation.mutate(task.id)}
+                          className="w-6 h-6 rounded flex items-center justify-center text-[var(--muted-foreground)] hover:text-red-600 transition-colors shrink-0"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                      {task.notes && (
+                        <p className="text-xs text-[var(--text-secondary)] pl-7 mt-1">{task.notes}</p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
+      {/* New Task Dialog */}
       <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
         <DialogContent className="bg-[var(--card)] border-[var(--border)]">
           <DialogHeader>
@@ -318,18 +413,15 @@ export default function AgendaPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TASK_TYPES.map((t) => <SelectItem key={t} value={t}>{TASK_TYPE_LABELS[t]}</SelectItem>)}
+                    {TASK_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{TASK_TYPE_LABELS[t]}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm text-[var(--text-secondary)]">Data</Label>
-                <Input
-                  type="date"
-                  value={taskDate}
-                  onChange={(e) => setTaskDate(e.target.value)}
-                  className="bg-[var(--background)] border-[var(--border)]"
-                />
+                <DatePicker value={taskDate} onChange={setTaskDate} />
               </div>
             </div>
 
@@ -340,7 +432,9 @@ export default function AgendaPage() {
                   <SelectValue placeholder="Selecionar lead..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {leads.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                  {leads.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -356,13 +450,20 @@ export default function AgendaPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={() => setShowNewTask(false)} className="flex-1 border-[var(--border)]">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNewTask(false)}
+                className="flex-1 border-[var(--border)]"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white">
-                {createMutation.isPending ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Criar Tarefa"}
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                className="flex-1 bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white"
+              >
+                {createMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : "Criar Tarefa"}
               </Button>
             </div>
           </form>

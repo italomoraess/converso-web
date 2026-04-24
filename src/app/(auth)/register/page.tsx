@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff, Mail, Lock, User, Zap, AlertCircle, ArrowRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { publicClient } from "@/lib/axios-public";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -157,9 +158,7 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold h-11"
           >
-            {loading ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
+            {loading ? <Spinner className="w-4 h-4 text-white" /> : (
               <>
                 Criar conta
                 <ArrowRight size={16} className="ml-2" />

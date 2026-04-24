@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Eye, EyeOff, Mail, Lock, Zap, AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -104,9 +105,7 @@ function LoginForm() {
         disabled={loading}
         className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white font-semibold h-11"
       >
-        {loading ? (
-          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : (
+        {loading ? <Spinner className="w-4 h-4 text-white" /> : (
           <>
             Entrar
             <ArrowRight size={16} className="ml-2" />

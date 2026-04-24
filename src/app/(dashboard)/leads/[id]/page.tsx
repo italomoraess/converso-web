@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Spinner } from "@/components/ui/spinner";
 import {
   ArrowLeft,
   Save,
@@ -286,9 +287,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
             disabled={updateMutation.isPending}
             className="w-full bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-white gap-2"
           >
-            {updateMutation.isPending ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
+            {updateMutation.isPending ? <Spinner className="w-4 h-4 text-white" /> : (
               <>
                 <Save size={16} />
                 Salvar alterações
