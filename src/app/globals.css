@@ -1,0 +1,176 @@
+/* ============================================================
+   CONVERSO — Design tokens (ported from the design bundle)
+   CRM para autônomos. "Converso" = conversa + conversão.
+   Fonts: Sora (display) + Plus Jakarta Sans (UI/body)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+
+:root {
+  /* Brand indigo scale */
+  --cv-50: #EEF0FF;
+  --cv-100: #E0E3FF;
+  --cv-200: #C7CBFF;
+  --cv-300: #A5A8FB;
+  --cv-400: #8385F4;
+  --cv-500: #6366F1;
+  --cv-600: #4F46E5;
+  --cv-700: #4338CA;
+  --cv-800: #3730A3;
+  --cv-900: #312E81;
+
+  /* Dynamic primary (overridable by the Appearance panel) */
+  --primary: #4F46E5;
+  --primary-soft: #EEF0FF;
+  --primary-press: #4338CA;
+  --on-primary: #FFFFFF;
+
+  /* Funnel stage hues */
+  --stage-lead: #64748B;
+  --stage-contato: #0EA5E9;
+  --stage-prop: #F59E0B;
+  --stage-nego: #8B5CF6;
+  --stage-ganho: #10B981;
+  --stage-perdido: #F43F5E;
+
+  /* Semantic */
+  --money: #059669;
+  --money-soft: #D1FAE5;
+  --warn: #D97706;
+  --danger: #E11D48;
+
+  /* Neutrals — light */
+  --bg: #F5F6FB;
+  --surface: #FFFFFF;
+  --surface-2: #FBFBFE;
+  --border: #E8EAF3;
+  --border-strong: #D6D9E8;
+  --text: #11152A;
+  --text-muted: #586079;
+  --text-subtle: #8A92A8;
+
+  /* Radius (overridable by the Appearance panel) */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --sh-sm: 0 1px 2px rgba(17, 21, 42, .05), 0 1px 3px rgba(17, 21, 42, .04);
+  --sh-md: 0 4px 14px rgba(17, 21, 42, .07), 0 2px 6px rgba(17, 21, 42, .04);
+  --sh-lg: 0 18px 48px rgba(17, 21, 42, .12), 0 6px 16px rgba(17, 21, 42, .06);
+  --sh-primary: 0 8px 22px color-mix(in srgb, var(--primary) 32%, transparent);
+
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-ui: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+/* Dark theme overrides (applied via .cv-dark) */
+.cv-dark {
+  --bg: #0C0E18;
+  --surface: #161A2B;
+  --surface-2: #1C2138;
+  --border: #262C44;
+  --border-strong: #333A57;
+  --text: #F3F4FB;
+  --text-muted: #A2AAC4;
+  --text-subtle: #6B7393;
+  --primary-soft: color-mix(in srgb, var(--primary) 22%, #0C0E18);
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, .4);
+  --sh-md: 0 6px 18px rgba(0, 0, 0, .45);
+  --sh-lg: 0 20px 50px rgba(0, 0, 0, .55);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body {
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  margin: 0;
+  letter-spacing: -.02em;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+
+.cv-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-subtle) 40%, transparent);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.w-row {
+  transition: background .12s;
+}
+
+.w-row:hover {
+  background: var(--bg);
+}
+
+@keyframes cv-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes cv-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cv-pop {
+  0% { transform: scale(.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes cv-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+
+@keyframes cv-bar-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
