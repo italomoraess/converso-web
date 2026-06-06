@@ -3,28 +3,30 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { CV, type Negocio, type Evento, type Etapa } from '@/lib/data';
+import { CV, fmtBRL, catColor, type Negocio, type Evento, type Etapa } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge } from '@/components/ui';
 import { WSparkline, WBarChart } from '@/components/charts';
+import { useStore } from '@/components/app/store';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const k = CV.kpis;
-  const pct = Math.round((k.receitaMes / k.receitaMeta) * 100);
-  const hoje = CV.agenda.filter((a: Evento) => a.dia === 4).sort((a: Evento, b: Evento) => a.hora.localeCompare(b.hora));
+  const { kpis: k, agenda, negocios, sparkReceita, receitaMeses, clienteById } = useStore();
+  const pct = k.receitaMeta ? Math.round((k.receitaMes / k.receitaMeta) * 100) : 0;
+  const today = new Date().getDate();
+  const hoje = agenda.filter((a: Evento) => a.dia === today).sort((a: Evento, b: Evento) => a.hora.localeCompare(b.hora));
   const funilCounts = CV.etapas.map((e: Etapa) => ({
     ...e,
-    n: CV.negocios.filter((d: Negocio) => d.etapa === e.id).length,
-    v: CV.negocios.filter((d: Negocio) => d.etapa === e.id).reduce((s: number, d: Negocio) => s + d.valor, 0),
+    n: negocios.filter((d: Negocio) => d.etapa === e.id).length,
+    v: negocios.filter((d: Negocio) => d.etapa === e.id).reduce((s: number, d: Negocio) => s + d.valor, 0),
   }));
-  const totalAberto = CV.negocios.filter((d: Negocio) => d.etapa !== 'ganho').reduce((s: number, d: Negocio) => s + d.valor, 0);
+  const totalAberto = negocios.filter((d: Negocio) => d.etapa !== 'ganho').reduce((s: number, d: Negocio) => s + d.valor, 0);
   const maxFunil = Math.max(...funilCounts.map((c) => c.v), 1);
 
   const kpiCards = [
-    { label: 'Receita do mês', value: CV.fmtBRL(k.receitaMes), delta: `+${k.receitaDelta}%`, up: true, icon: 'dollar', color: 'var(--primary)', spark: CV.sparkReceita },
-    { label: 'A receber', value: CV.fmtBRL(k.aReceber), sub: '4 cobranças', icon: 'receipt', color: 'var(--money)' },
-    { label: 'Taxa de conversão', value: k.taxaConversao + '%', delta: '+6pts', up: true, icon: 'target', color: 'var(--stage-nego)' },
-    { label: 'Compromissos hoje', value: k.agendaHoje, sub: 'Próximo às 09:00', icon: 'calendar', color: 'var(--stage-contato)' },
+    { label: 'Receita do mês', value: fmtBRL(k.receitaMes), delta: `${k.receitaDelta >= 0 ? '+' : ''}${k.receitaDelta}%`, up: true, icon: 'dollar', color: 'var(--primary)', spark: sparkReceita },
+    { label: 'A receber', value: fmtBRL(k.aReceber), sub: `${k.negociosAbertos} em aberto`, icon: 'receipt', color: 'var(--money)' },
+    { label: 'Taxa de conversão', value: k.taxaConversao + '%', icon: 'target', color: 'var(--stage-nego)' },
+    { label: 'Compromissos hoje', value: k.agendaHoje, sub: hoje[0] ? `Próximo às ${hoje[0].hora}` : 'Sem compromissos', icon: 'calendar', color: 'var(--stage-contato)' },
   ] as const;
 
   return (
@@ -55,18 +57,18 @@ export default function DashboardPage() {
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Últimos 6 meses</div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className="cv-num" style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>{CV.fmtBRL(k.receitaMes)}</div>
+              <div className="cv-num" style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-display)' }}>{fmtBRL(k.receitaMes)}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'flex-end', color: 'var(--money)', fontSize: 13, fontWeight: 700, marginTop: 2 }}>
                 <Icon name="trendUp" size={15} /> {pct}% da meta
               </div>
             </div>
           </div>
-          <WBarChart data={CV.receitaMeses} h={190} />
+          <WBarChart data={receitaMeses} h={190} />
         </WCard>
 
         <WCard pad={24} style={{ display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 4 }}>Funil de vendas</h3>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>{CV.fmtBRL(totalAberto)} em aberto</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 18 }}>{fmtBRL(totalAberto)} em aberto</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13, flex: 1 }}>
             {funilCounts.map((c) => (
               <div key={c.id} onClick={() => router.push('/funil')} style={{ cursor: 'pointer' }}>
@@ -76,7 +78,7 @@ export default function DashboardPage() {
                     <span style={{ fontSize: 13.5, fontWeight: 600 }}>{c.nome}</span>
                     <span style={{ fontSize: 12, color: 'var(--text-subtle)', fontWeight: 700 }}>· {c.n}</span>
                   </div>
-                  <span className="cv-num" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{CV.fmtBRL(c.v)}</span>
+                  <span className="cv-num" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{fmtBRL(c.v)}</span>
                 </div>
                 <div style={{ height: 7, borderRadius: 99, background: 'var(--bg)', overflow: 'hidden' }}>
                   <div style={{ width: (c.v / maxFunil) * 100 + '%', height: '100%', borderRadius: 99, background: c.cor }} />
@@ -96,7 +98,7 @@ export default function DashboardPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {hoje.map((a: Evento) => {
-              const cl = CV.clienteById(a.cliente), cc = CV.catColor[a.tipo] || 'var(--primary)';
+              const cl = clienteById(a.cliente), cc = catColor[a.tipo] || 'var(--primary)';
               return (
                 <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 'var(--r-md)', background: 'var(--bg)' }}>
                   <div className="cv-num" style={{ textAlign: 'center', minWidth: 46 }}>
@@ -118,8 +120,8 @@ export default function DashboardPage() {
         <WCard pad={24}>
           <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 18 }}>Negócios em destaque</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {CV.negocios.filter((d: Negocio) => d.etapa === 'nego' || d.etapa === 'prop').slice(0, 4).map((d: Negocio) => {
-              const cl = CV.clienteById(d.cliente), et = CV.etapas.find((e: Etapa) => e.id === d.etapa)!;
+            {negocios.filter((d: Negocio) => d.etapa === 'nego' || d.etapa === 'prop').slice(0, 4).map((d: Negocio) => {
+              const cl = clienteById(d.cliente), et = CV.etapas.find((e: Etapa) => e.id === d.etapa)!;
               return (
                 <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '11px 14px', borderRadius: 'var(--r-md)', border: '1px solid var(--border)' }}>
                   <Avatar ini={cl.ini} cor={cl.cor} size={36} />
@@ -128,7 +130,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{cl.nome}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{CV.fmtBRL(d.valor)}</div>
+                    <div className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{fmtBRL(d.valor)}</div>
                     <Badge color={et.cor} style={{ marginTop: 3 }}>{et.nome}</Badge>
                   </div>
                 </div>

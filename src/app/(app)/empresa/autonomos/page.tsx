@@ -38,7 +38,7 @@ function WInviteForm({ onClose, onSave }: { onClose: () => void; onSave: (m: { n
 }
 
 /* ---------- WAutonomoDetail ---------- */
-function WAutonomoDetail({ p, onClose, flash }: { p: Membro; onClose: () => void; flash: (msg: string) => void }) {
+function WAutonomoDetail({ p, onClose, flash, onApprove }: { p: Membro; onClose: () => void; flash: (msg: string) => void; onApprove: (id: string) => void }) {
   const st = STATUS_TEAM[p.status];
   const stats: [string, string | number][] = [
     ['Receita/mês', fmtBRL(p.receita)],
@@ -73,7 +73,7 @@ function WAutonomoDetail({ p, onClose, flash }: { p: Membro; onClose: () => void
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
           {p.status === 'pendente'
-            ? <WButton full icon="check" onClick={() => { flash('Cadastro aprovado ✓'); onClose(); }}>Aprovar cadastro</WButton>
+            ? <WButton full icon="check" onClick={() => { onApprove(p.id); flash('Cadastro aprovado ✓'); onClose(); }}>Aprovar cadastro</WButton>
             : <WButton full variant="soft" icon="chart" onClick={() => { flash('Abrindo relatório...'); }}>Ver relatório completo</WButton>}
           <WButton variant="outline" icon="whatsapp" style={{ color: '#1FA855' }} onClick={() => flash('Abrindo conversa...')}>Mensagem</WButton>
         </div>
@@ -84,7 +84,7 @@ function WAutonomoDetail({ p, onClose, flash }: { p: Membro; onClose: () => void
 
 /* ---------- Page ---------- */
 export default function EmpresaAutonomosPage() {
-  const { equipe, inviteMember, flash } = useStore();
+  const { equipe, inviteMember, flash, setMemberStatus } = useStore();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('Todos');
   const [invite, setInvite] = useState(false);
@@ -138,7 +138,7 @@ export default function EmpresaAutonomosPage() {
       </WCard>
 
       {invite && <WInviteForm onClose={() => setInvite(false)} onSave={(m) => { inviteMember(m); setInvite(false); }} />}
-      {detail && <WAutonomoDetail p={detail} onClose={() => setDetail(null)} flash={flash} />}
+      {detail && <WAutonomoDetail p={detail} onClose={() => setDetail(null)} flash={flash} onApprove={(id) => setMemberStatus(id, 'ativo')} />}
     </div>
   );
 }

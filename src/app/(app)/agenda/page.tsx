@@ -2,33 +2,40 @@
 
 import { useState } from 'react';
 import { Icon } from '@/lib/icon';
-import { CV, clienteById, type Evento } from '@/lib/data';
+import { CV, type Cliente, type Evento } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge, WModal } from '@/components/ui';
 import { useStore } from '@/components/app/store';
+
+const YEAR = new Date().getFullYear();
+const MONTH = new Date().getMonth(); // 0-based
+const TODAY = new Date().getDate();
+const MONTH_LABEL = CV.meses[MONTH];
 
 /* ─── WNovoAgendamento ──────────────────────────────────────────────────── */
 
 function WNovoAgendamento({
   day,
+  clientes,
   onClose,
   onSave,
 }: {
   day: number;
+  clientes: Cliente[];
   onClose: () => void;
   onSave: (ev: Omit<Evento, 'id'>) => void;
 }) {
-  const [cliente, setCliente] = useState('c1');
+  const [cliente, setCliente] = useState(clientes[0]?.id ?? '');
   const [tipo, setTipo] = useState('Consultoria');
   const [hora, setHora] = useState('10:00');
   const horas = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
 
   return (
-    <WModal onClose={onClose} title={`Novo agendamento · ${day} de junho`} width={520}>
+    <WModal onClose={onClose} title={`Novo agendamento · ${day} de ${MONTH_LABEL.toLowerCase()}`} width={520}>
       <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Cliente</div>
           <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
-            {CV.clientes.map((c) => {
+            {clientes.map((c) => {
               const on = cliente === c.id;
               return (
                 <button
@@ -114,17 +121,18 @@ function WNovoAgendamento({
         <WButton variant="outline" onClick={onClose}>Cancelar</WButton>
         <WButton
           icon="calCheck"
-          onClick={() =>
+          onClick={() => {
+            const cl = clientes.find((c) => c.id === cliente);
             onSave({
               dia: day,
               hora,
               tipo,
               cliente,
-              titulo: `${tipo} — ${clienteById(cliente).nome.split(' ')[0]}`,
+              titulo: `${tipo}${cl ? ' — ' + cl.nome.split(' ')[0] : ''}`,
               dur: 60,
               status: 'confirmado',
-            })
-          }
+            });
+          }}
         >
           Confirmar
         </WButton>
@@ -135,15 +143,12 @@ function WNovoAgendamento({
 
 /* ─── AgendaPage ────────────────────────────────────────────────────────── */
 
-const YEAR = 2026;
-const MONTH = 5;
-
 const WEEKDAYS_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 export default function AgendaPage() {
-  const { agenda, addEvent } = useStore();
+  const { agenda, addEvent, clientes, clienteById } = useStore();
 
-  const [sel, setSel] = useState(4);
+  const [sel, setSel] = useState(TODAY);
   const [novo, setNovo] = useState(false);
 
   const first = new Date(YEAR, MONTH, 1).getDay();
@@ -164,7 +169,7 @@ export default function AgendaPage() {
       <WCard pad={0} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 22px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: 'var(--font-display)' }}>Junho 2026</h3>
+            <h3 style={{ fontSize: 19, fontWeight: 800, fontFamily: 'var(--font-display)' }}>{MONTH_LABEL} {YEAR}</h3>
             <div style={{ display: 'flex', gap: 6 }}>
               <button style={{ width: 34, height: 34, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name="chevL" size={18} color="var(--text-muted)" />
@@ -174,7 +179,7 @@ export default function AgendaPage() {
               </button>
             </div>
           </div>
-          <WButton size="sm" variant="soft" icon="calendar" onClick={() => setSel(4)}>Hoje</WButton>
+          <WButton size="sm" variant="soft" icon="calendar" onClick={() => setSel(TODAY)}>Hoje</WButton>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderBottom: '1px solid var(--border)' }}>
           {CV.diasSemana.map((d) => (
@@ -197,7 +202,7 @@ export default function AgendaPage() {
                 />
               );
             }
-            const isToday = d === 4;
+            const isToday = d === TODAY;
             const isSel = d === sel;
             const evs = evDay(d);
             return (
@@ -279,7 +284,7 @@ export default function AgendaPage() {
               {WEEKDAYS_FULL[new Date(YEAR, MONTH, sel).getDay()]}
             </div>
             <h3 style={{ fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: -0.4 }}>
-              {sel} de junho
+              {sel} de {MONTH_LABEL.toLowerCase()}
             </h3>
             <div style={{ fontSize: 13, color: 'var(--text-subtle)', fontWeight: 600, marginTop: 2 }}>
               {selEvents.length} {selEvents.length === 1 ? 'compromisso' : 'compromissos'}
@@ -328,6 +333,7 @@ export default function AgendaPage() {
       {novo && (
         <WNovoAgendamento
           day={sel}
+          clientes={clientes}
           onClose={() => setNovo(false)}
           onSave={(ev) => {
             addEvent(ev);

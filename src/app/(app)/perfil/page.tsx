@@ -3,10 +3,9 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { CV } from '@/lib/data';
 import { WButton, WCard, Field } from '@/components/ui';
 import { useStore } from '@/components/app/store';
-import { tokenStorage } from '@/lib/auth-storage';
+import { authService } from '@/services';
 
 interface ToggleProps {
   on: boolean;
@@ -23,8 +22,8 @@ interface RowProps {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { setAppearanceOpen } = useStore();
-  const u = CV.user;
+  const { setAppearanceOpen, user, servicos, clientes, negocios } = useStore();
+  const u = user;
   const [notif, setNotif] = useState(true);
   const [email, setEmail] = useState(true);
   const [resumo, setResumo] = useState(false);
@@ -175,7 +174,7 @@ export default function PerfilPage() {
           <div
             style={{ display: 'flex', justifyContent: 'space-around', textAlign: 'center' } satisfies CSSProperties}
           >
-            {([['Serviços', CV.servicos.length], ['Clientes', CV.clientes.length], ['Negócios', CV.negocios.length]] as [string, number][]).map(
+            {([['Serviços', servicos.length], ['Clientes', clientes.length], ['Negócios', negocios.length]] as [string, number][]).map(
               ([l, v]) => (
                 <div key={l}>
                   <div
@@ -198,8 +197,8 @@ export default function PerfilPage() {
           icon="logout"
           full
           size="lg"
-          onClick={() => {
-            tokenStorage.clear();
+          onClick={async () => {
+            await authService.logout();
             router.push('/login');
           }}
         >

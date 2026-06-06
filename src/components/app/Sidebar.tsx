@@ -2,7 +2,6 @@
 /* CONVERSO Web — sidebar with role-aware navigation (ported from web/ui.jsx). */
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { CV } from '@/lib/data';
 import { Avatar, LogoMark, Wordmark } from '@/components/ui';
 import { useStore } from './store';
 
@@ -22,13 +21,13 @@ const navAdmin = [
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { role, setRole, collapsed, setCollapsed } = useStore();
+  const { role, setRole, collapsed, setCollapsed, empresa, user } = useStore();
   const isAdmin = role === 'admin';
   const nav = isAdmin ? navAdmin : navAutonomo;
   const profileHref = isAdmin ? '/empresa/config' : '/perfil';
   const footUser = isAdmin
-    ? { ini: CV.empresa.adminIni, nome: CV.empresa.admin, sub: CV.empresa.nome }
-    : { ini: CV.user.ini, nome: CV.user.nome, sub: 'Plano ' + CV.user.plano };
+    ? { ini: empresa.adminIni, nome: empresa.admin || empresa.nome, sub: empresa.nome }
+    : { ini: user.ini, nome: user.nome, sub: 'Plano ' + user.plano };
   const w = collapsed ? 76 : 248;
 
   const switchMode = () => {

@@ -7,6 +7,8 @@ import { WButton, Wordmark, Field } from '@/components/ui';
 import { BrandPanel } from '@/components/auth/BrandPanel';
 import { Splash } from '@/components/auth/Splash';
 import { roleStorage, type Role } from '@/lib/auth-storage';
+import { authService } from '@/services';
+import { USE_MOCK } from '@/lib/api';
 
 const roles: { id: Role; label: string; icon: string }[] = [
   { id: 'autonomo', label: 'Autônomo', icon: 'user' },
@@ -16,14 +18,35 @@ const roles: { id: Role; label: string; icon: string }[] = [
 export default function LoginPage() {
   const router = useRouter();
   const [showSplash, setShowSplash] = useState(true);
-  const [email, setEmail] = useState('julia.mendes@converso.app');
-  const [senha, setSenha] = useState('senha-segura');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [show, setShow] = useState(false);
   const [role, setRole] = useState<Role>('autonomo');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const onAuth = (r: Role) => {
-    roleStorage.set(r);
-    router.push(r === 'admin' ? '/empresa' : '/dashboard');
+  const onAuth = async (r: Role) => {
+    setErr(null);
+    if (USE_MOCK) {
+      roleStorage.set(r);
+      router.push(r === 'admin' ? '/empresa' : '/dashboard');
+      return;
+    }
+    if (!email || !senha) {
+      setErr('Informe e-mail e senha.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await authService.login(email.trim(), senha);
+      const serverRole = res.user?.role ?? r;
+      roleStorage.set(serverRole);
+      router.push(serverRole === 'admin' ? '/empresa' : '/dashboard');
+    } catch {
+      setErr('E-mail ou senha inválidos.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (showSplash) return <Splash onDone={() => setShowSplash(false)} />;
@@ -88,8 +111,9 @@ export default function LoginPage() {
             <div style={{ textAlign: 'right', marginTop: -4 }}>
               <button style={{ border: 'none', background: 'none', color: 'var(--primary)', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-ui)' }}>Esqueci minha senha</button>
             </div>
+            {err && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{err}</div>}
             <WButton size="lg" full icon="arrowR" onClick={() => onAuth(role)}>
-              Entrar{role === 'admin' ? ' como admin' : ''}
+              {busy ? 'Entrando…' : `Entrar${role === 'admin' ? ' como admin' : ''}`}
             </WButton>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--text-subtle)', fontSize: 13 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--border)' }} /> ou <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

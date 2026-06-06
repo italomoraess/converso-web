@@ -10,14 +10,15 @@ export interface TeamAgg {
   meses: { m: string; v: number }[];
 }
 
-export function teamAgg(equipe: Membro[]): TeamAgg {
+export function teamAgg(equipe: Membro[], mesesLabels?: string[]): TeamAgg {
   const ativos = equipe.filter((p) => p.status === 'ativo');
   const faturamento = equipe.reduce((s, p) => s + p.receita, 0);
   const clientes = equipe.reduce((s, p) => s + p.clientes, 0);
   const negocios = equipe.reduce((s, p) => s + p.negocios, 0);
   const ticket = clientes ? Math.round(faturamento / clientes) : 0;
-  const meses = CV.receitaMeses.map((m, i) => ({
-    m: m.m,
+  const labels = mesesLabels?.length ? mesesLabels : CV.receitaMeses.map((m) => m.m);
+  const meses = labels.map((m, i) => ({
+    m,
     v: equipe.reduce((s, p) => s + (p.spark[i] || 0), 0),
   }));
   return { ativos, faturamento, clientes, negocios, ticket, meses };

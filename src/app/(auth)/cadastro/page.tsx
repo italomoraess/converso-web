@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { WButton, Wordmark, Field } from '@/components/ui';
 import { BrandPanel } from '@/components/auth/BrandPanel';
 import { roleStorage } from '@/lib/auth-storage';
+import { authService } from '@/services';
+import { USE_MOCK } from '@/lib/api';
 
 const atividades = ['Beleza & Estética', 'Reparos & Serviços', 'Saúde & Bem-estar', 'Criativo / Freelancer', 'Consultoria', 'Educação'];
 
@@ -12,10 +14,39 @@ export default function CadastroPage() {
   const router = useRouter();
   const [f, setF] = useState({ nome: '', email: '', fone: '', senha: '', atividade: '' });
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  const onAuth = () => {
-    roleStorage.set('autonomo');
-    router.push('/dashboard');
+  const onAuth = async () => {
+    setErr(null);
+    if (USE_MOCK) {
+      roleStorage.set('autonomo');
+      router.push('/dashboard');
+      return;
+    }
+    if (!f.nome || !f.email || !f.senha) {
+      setErr('Preencha nome, e-mail e senha.');
+      return;
+    }
+    if (f.senha.length < 8 || !/(?=.*[A-Z])(?=.*\d)/.test(f.senha)) {
+      setErr('Senha: mínimo 8 caracteres, com 1 maiúscula e 1 número.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await authService.register({
+        name: f.nome.trim(),
+        email: f.email.trim(),
+        password: f.senha,
+        phone: f.fone || undefined,
+      });
+      roleStorage.set(res.user?.role ?? 'autonomo');
+      router.push((res.user?.role ?? 'autonomo') === 'admin' ? '/empresa' : '/dashboard');
+    } catch {
+      setErr('Não foi possível criar a conta. O e-mail pode já estar em uso.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -63,8 +94,9 @@ export default function CadastroPage() {
                 })}
               </div>
             </div>
+            {err && <div style={{ color: 'var(--danger)', fontSize: 13, fontWeight: 600 }}>{err}</div>}
             <WButton size="lg" full icon="check" onClick={onAuth} style={{ marginTop: 4 }}>
-              Criar conta e começar
+              {busy ? 'Criando…' : 'Criar conta e começar'}
             </WButton>
             <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>
               Já tem conta?{' '}

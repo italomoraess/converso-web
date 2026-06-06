@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Icon } from '@/lib/icon';
-import { CV, fmtBRL, clienteById, catColor, catIcon, STATUS_META, type Servico } from '@/lib/data';
+import { CV, fmtBRL, catIcon, STATUS_META, type Cliente, type Servico } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge, Field, WModal } from '@/components/ui';
 import { useStore } from '@/components/app/store';
 
@@ -21,13 +21,14 @@ type SvcFormState = {
 /* ── WServicoForm ───────────────────────────────────────────────────────── */
 interface WServicoFormProps {
   editing: Servico | null;
+  clientes: Cliente[];
   onClose: () => void;
   onSave: (f: Servico) => void;
   onDelete: (id: string) => void;
 }
 
-function WServicoForm({ editing, onClose, onSave, onDelete }: WServicoFormProps) {
-  const blank: SvcFormState = { nome: '', cat: 'Consultoria', preco: '', dur: '1h', status: 'ativo', cliente: 'c1', desc: '' };
+function WServicoForm({ editing, clientes, onClose, onSave, onDelete }: WServicoFormProps) {
+  const blank: SvcFormState = { nome: '', cat: 'Consultoria', preco: '', dur: '1h', status: 'ativo', cliente: clientes[0]?.id ?? '', desc: '' };
   const [f, setF] = useState<SvcFormState>(editing ? { ...editing } : blank);
   const set = (k: keyof SvcFormState) => (v: string) => setF((s) => ({ ...s, [k]: v }));
   const cats = Object.keys(CV.catColor);
@@ -90,7 +91,7 @@ function WServicoForm({ editing, onClose, onSave, onDelete }: WServicoFormProps)
         <div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Cliente vinculado</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {CV.clientes.map((c) => {
+            {clientes.map((c) => {
               const on = f.cliente === c.id;
               return (
                 <button
@@ -159,7 +160,7 @@ function WServicoForm({ editing, onClose, onSave, onDelete }: WServicoFormProps)
 
 /* ── ServicosPage (WServicos logic) ─────────────────────────────────────── */
 export default function ServicosPage() {
-  const { servicos, svcForm, setSvcForm, saveService, deleteService } = useStore();
+  const { servicos, clientes, clienteById, svcForm, setSvcForm, saveService, deleteService } = useStore();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('Todos');
   const cats = ['Todos', ...Object.keys(CV.catColor)];
@@ -220,7 +221,7 @@ export default function ServicosPage() {
           </thead>
           <tbody>
             {list.map((s: Servico) => {
-              const cl = CV.clienteById(s.cliente);
+              const cl = clienteById(s.cliente);
               const cc = CV.catColor[s.cat] || 'var(--primary)';
               const st = STATUS_META[s.status];
               return (
@@ -248,7 +249,7 @@ export default function ServicosPage() {
                     </div>
                   </td>
                   <td style={{ padding: '14px 20px' }}>
-                    <span className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{CV.fmtBRL(s.preco)}</span>
+                    <span className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{fmtBRL(s.preco)}</span>
                   </td>
                   <td style={{ padding: '14px 20px' }}>
                     <span style={{ fontSize: 13.5, color: 'var(--text-muted)', fontWeight: 600 }}>{s.dur}</span>
@@ -279,6 +280,7 @@ export default function ServicosPage() {
       {svcForm && (
         <WServicoForm
           editing={svcForm.editing}
+          clientes={clientes}
           onClose={() => setSvcForm(null)}
           onSave={saveService}
           onDelete={deleteService}

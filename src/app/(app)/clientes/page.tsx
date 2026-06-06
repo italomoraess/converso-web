@@ -2,11 +2,13 @@
 
 import React from 'react';
 import { Icon } from '@/lib/icon';
-import { CV, type Cliente, type Negocio } from '@/lib/data';
+import { fmtBRL, type Cliente, type Negocio } from '@/lib/data';
 import { WCard, Avatar } from '@/components/ui';
+import { useStore } from '@/components/app/store';
 
 export default function ClientesPage() {
-  const dealsOf = (id: string): Negocio[] => CV.negocios.filter((d: Negocio) => d.cliente === id);
+  const { clientes, negocios } = useStore();
+  const dealsOf = (id: string): Negocio[] => negocios.filter((d: Negocio) => d.cliente === id);
   return (
     <div style={{ padding: 28 }}>
       <WCard pad={0} style={{ overflow: 'hidden' }}>
@@ -17,7 +19,7 @@ export default function ClientesPage() {
             ))}
           </tr></thead>
           <tbody>
-            {CV.clientes.map((c: Cliente) => {
+            {clientes.map((c: Cliente) => {
               const ds = dealsOf(c.id), val = ds.reduce((s: number, d: Negocio) => s + d.valor, 0);
               return (
                 <tr key={c.id} className="w-row" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -35,7 +37,7 @@ export default function ClientesPage() {
                     <span className="cv-num" style={{ fontWeight: 700, fontSize: 14 }}>{ds.length}</span>
                   </td>
                   <td style={{ padding: '14px 20px' }}>
-                    <span className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{CV.fmtBRL(val)}</span>
+                    <span className="cv-num" style={{ fontWeight: 800, fontSize: 14.5 }}>{fmtBRL(val)}</span>
                   </td>
                   <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                     <button style={{ border: 'none', background: 'var(--bg)', borderRadius: 9, width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--text-muted)' }}>

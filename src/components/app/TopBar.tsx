@@ -3,28 +3,36 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { CV } from '@/lib/data';
 import { WButton } from '@/components/ui';
 import { useStore } from './store';
 
+const todayLabel = () =>
+  new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
 const ROUTE_META: Record<string, { title: string; sub: string }> = {
-  '/dashboard': { title: 'Dashboard', sub: 'Quarta, 4 de junho de 2026' },
+  '/dashboard': { title: 'Dashboard', sub: todayLabel() },
   '/servicos': { title: 'Serviços', sub: 'Gerencie seu catálogo de serviços' },
   '/funil': { title: 'Funil de vendas', sub: 'Acompanhe suas oportunidades' },
   '/agenda': { title: 'Agenda', sub: 'Seus compromissos do mês' },
   '/clientes': { title: 'Clientes', sub: 'Sua base de contatos' },
   '/perfil': { title: 'Perfil & Configurações', sub: 'Sua conta no Converso' },
-  '/empresa': { title: 'Visão geral', sub: CV.empresa.nome + ' · sua empresa' },
+  '/empresa': { title: 'Visão geral', sub: 'sua empresa' },
   '/empresa/autonomos': { title: 'Autônomos', sub: 'Gerencie os profissionais da equipe' },
   '/empresa/desempenho': { title: 'Desempenho', sub: 'Ranking e metas da equipe' },
-  '/empresa/config': { title: 'Configurações da empresa', sub: CV.empresa.nome },
+  '/empresa/config': { title: 'Configurações da empresa', sub: '' },
 };
 
 export function TopBar() {
   const pathname = usePathname();
-  const { setSvcForm, flash } = useStore();
+  const { setSvcForm, flash, empresa } = useStore();
   const [q, setQ] = useState('');
-  const meta = ROUTE_META[pathname] || { title: '', sub: '' };
+  const base = ROUTE_META[pathname] || { title: '', sub: '' };
+  const meta =
+    pathname === '/empresa'
+      ? { title: base.title, sub: `${empresa.nome} · sua empresa` }
+      : pathname === '/empresa/config'
+        ? { title: base.title, sub: empresa.nome }
+        : base;
 
   const onNew =
     pathname === '/servicos'

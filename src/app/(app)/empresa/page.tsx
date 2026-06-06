@@ -1,33 +1,33 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { CV, fmtBRL } from '@/lib/data';
+import { fmtBRL, STATUS_TEAM } from '@/lib/data';
 import { WCard, Avatar, Badge } from '@/components/ui';
 import { WBarChart } from '@/components/charts';
 import { useStore } from '@/components/app/store';
 import { teamAgg } from '@/components/app/admin-utils';
 
 export default function EmpresaVisaoPage() {
-  const { equipe } = useStore();
+  const { equipe, empresa, mesesLabels } = useStore();
   const router = useRouter();
-  const a = teamAgg(equipe);
-  const pct = Math.round((a.faturamento / CV.empresa.metaEquipe) * 100);
+  const a = teamAgg(equipe, mesesLabels);
+  const pct = empresa.metaEquipe ? Math.round((a.faturamento / empresa.metaEquipe) * 100) : 0;
   const ranked = [...equipe].sort((x, y) => y.receita - x.receita);
   const maxRec = Math.max(...equipe.map((p) => p.receita), 1);
 
   const kpis = [
     { label: 'Faturamento da equipe', value: fmtBRL(a.faturamento), delta: '+14%', icon: 'dollar', color: 'var(--primary)' },
-    { label: 'Autônomos ativos', value: `${a.ativos.length}/${equipe.length}`, sub: '1 pendente · 1 inativo', icon: 'users', color: 'var(--stage-contato)' },
+    { label: 'Autônomos ativos', value: `${a.ativos.length}/${equipe.length}`, sub: `${equipe.filter((p) => p.status === 'pendente').length} pendente · ${equipe.filter((p) => p.status === 'inativo').length} inativo`, icon: 'users', color: 'var(--stage-contato)' },
     { label: 'Negócios em aberto', value: a.negocios, sub: 'na equipe toda', icon: 'funnel', color: 'var(--stage-nego)' },
     { label: 'Ticket médio', value: fmtBRL(a.ticket), sub: 'por cliente', icon: 'target', color: 'var(--money)' },
   ] as const;
 
-  const atividade = [
-    { ini: 'MV', cor: '#0EA5E9', txt: 'Marcos fechou um negócio de R$ 2.850', t: 'há 20 min' },
-    { ini: 'AB', cor: '#10B981', txt: 'Ana cadastrou 2 novos clientes', t: 'há 1 h' },
-    { ini: 'FL', cor: '#EC4899', txt: 'Fernanda aguarda aprovação de cadastro', t: 'há 3 h' },
-    { ini: 'JM', cor: '#4F46E5', txt: 'Júlia agendou consultoria para amanhã', t: 'há 5 h' },
-  ];
+  const atividade = ranked.slice(0, 4).map((p) => ({
+    ini: p.ini,
+    cor: p.cor,
+    txt: `${p.nome} · ${p.area}`,
+    t: STATUS_TEAM[p.status].label,
+  }));
 
   return (
     <div style={{ padding: 28, display: 'flex', flexDirection: 'column', gap: 20 }}>

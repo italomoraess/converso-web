@@ -2,12 +2,12 @@
 /* CONVERSO Web — Funil de vendas (Kanban com drag-and-drop) */
 import React, { useState } from 'react';
 import { Icon } from '@/lib/icon';
-import { CV, fmtBRL, clienteById, type Negocio, type StageId } from '@/lib/data';
+import { CV, fmtBRL, type Negocio, type StageId } from '@/lib/data';
 import { WCard, Avatar } from '@/components/ui';
 import { useStore } from '@/components/app/store';
 
 export default function FunilPage() {
-  const { negocios, moveDeal } = useStore();
+  const { negocios, moveDeal, clienteById } = useStore();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
 

@@ -1,14 +1,14 @@
 'use client';
-import { CV, fmtBRL, catColor } from '@/lib/data';
+import { fmtBRL, catColor } from '@/lib/data';
 import { WCard, Avatar } from '@/components/ui';
 import { WDonut } from '@/components/charts';
 import { useStore } from '@/components/app/store';
 import { teamAgg } from '@/components/app/admin-utils';
 
 export default function EmpresaDesempenhoPage() {
-  const { equipe } = useStore();
-  const a = teamAgg(equipe);
-  const pct = Math.round((a.faturamento / CV.empresa.metaEquipe) * 100);
+  const { equipe, empresa, mesesLabels } = useStore();
+  const a = teamAgg(equipe, mesesLabels);
+  const pct = empresa.metaEquipe ? Math.round((a.faturamento / empresa.metaEquipe) * 100) : 0;
   const ranked = [...equipe].sort((x, y) => y.receita - x.receita);
   const maxRec = Math.max(...equipe.map((p) => p.receita), 1);
 
@@ -26,8 +26,8 @@ export default function EmpresaDesempenhoPage() {
           <WDonut pct={pct} size={108} />
           <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700 }}>Meta da equipe · Junho</h3>
-            <div className="cv-num" style={{ fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-display)', marginTop: 6 }}>{fmtBRL(a.faturamento)} <span style={{ fontSize: 16, color: 'var(--text-subtle)', fontWeight: 600 }}>/ {fmtBRL(CV.empresa.metaEquipe)}</span></div>
-            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Faltam <b style={{ color: 'var(--text)' }}>{fmtBRL(Math.max(0, CV.empresa.metaEquipe - a.faturamento))}</b> para bater a meta do mês.</div>
+            <div className="cv-num" style={{ fontSize: 30, fontWeight: 800, fontFamily: 'var(--font-display)', marginTop: 6 }}>{fmtBRL(a.faturamento)} <span style={{ fontSize: 16, color: 'var(--text-subtle)', fontWeight: 600 }}>/ {fmtBRL(empresa.metaEquipe)}</span></div>
+            <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>Faltam <b style={{ color: 'var(--text)' }}>{fmtBRL(Math.max(0, empresa.metaEquipe - a.faturamento))}</b> para bater a meta do mês.</div>
           </div>
           <div style={{ textAlign: 'center' }}><div className="cv-num" style={{ fontSize: 40, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--primary)' }}>{pct}%</div><div style={{ fontSize: 13, color: 'var(--text-subtle)', fontWeight: 600 }}>concluído</div></div>
         </div>

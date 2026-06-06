@@ -23,10 +23,12 @@ async function refreshAccessToken(): Promise<string | null> {
   const refresh = tokenStorage.refresh;
   if (!refresh) return null;
   try {
-    const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: refresh });
-    const access = data?.accessToken ?? data?.access_token;
+    const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: refresh });
+    // crm-api envelopa as respostas em { data, message }.
+    const payload = res.data?.data ?? res.data;
+    const access = payload?.accessToken ?? payload?.access_token;
     if (access) {
-      tokenStorage.set(access, data?.refreshToken ?? data?.refresh_token);
+      tokenStorage.set(access, payload?.refreshToken ?? payload?.refresh_token);
       return access;
     }
   } catch {
@@ -37,7 +39,15 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 api.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Desembrulha o envelope global { data, message } da crm-api,
+    // para que os serviços leiam o payload direto em `res.data`.
+    const b = res.data;
+    if (b && typeof b === 'object' && 'data' in b && 'message' in b) {
+      res.data = (b as { data: unknown }).data;
+    }
+    return res;
+  },
   async (error: AxiosError) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
     if (error.response?.status === 401 && original && !original._retry) {
