@@ -5,6 +5,7 @@ import { CV, fmtBRL, catColor, STATUS_TEAM, type Membro } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge, Field, WModal } from '@/components/ui';
 import { WSparkline } from '@/components/charts';
 import { useStore } from '@/components/app/store';
+import { TableSkeleton } from '@/components/app/Skeletons';
 
 /* ---------- WInviteForm ---------- */
 function WInviteForm({ onClose, onSave }: { onClose: () => void; onSave: (m: { nome: string; email: string; area: string }) => void }) {
@@ -84,11 +85,12 @@ function WAutonomoDetail({ p, onClose, flash, onApprove }: { p: Membro; onClose:
 
 /* ---------- Page ---------- */
 export default function EmpresaAutonomosPage() {
-  const { equipe, inviteMember, flash, setMemberStatus } = useStore();
+  const { equipe, inviteMember, flash, setMemberStatus, loading } = useStore();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('Todos');
   const [invite, setInvite] = useState(false);
   const [detail, setDetail] = useState<Membro | null>(null);
+  if (loading) return <TableSkeleton />;
   const filters = ['Todos', 'Ativo', 'Pendente', 'Inativo'];
   const list = equipe.filter(
     (p) => (status === 'Todos' || CV.STATUS_TEAM[p.status].label === status) && p.nome.toLowerCase().includes(q.toLowerCase()),

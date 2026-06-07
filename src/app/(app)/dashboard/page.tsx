@@ -7,10 +7,12 @@ import { CV, fmtBRL, catColor, type Negocio, type Evento, type Etapa } from '@/l
 import { WButton, WCard, Avatar, Badge } from '@/components/ui';
 import { WSparkline, WBarChart } from '@/components/charts';
 import { useStore } from '@/components/app/store';
+import { DashboardSkeleton } from '@/components/app/Skeletons';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { kpis: k, agenda, negocios, sparkReceita, receitaMeses, clienteById } = useStore();
+  const { kpis: k, agenda, negocios, sparkReceita, receitaMeses, clienteById, loading } = useStore();
+  if (loading) return <DashboardSkeleton />;
   const pct = k.receitaMeta ? Math.round((k.receitaMes / k.receitaMeta) * 100) : 0;
   const today = new Date().getDate();
   const hoje = agenda.filter((a: Evento) => a.dia === today).sort((a: Evento, b: Evento) => a.hora.localeCompare(b.hora));

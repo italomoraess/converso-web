@@ -5,9 +5,11 @@ import { Icon } from '@/lib/icon';
 import { fmtBRL, type Cliente, type Negocio } from '@/lib/data';
 import { WCard, Avatar } from '@/components/ui';
 import { useStore } from '@/components/app/store';
+import { TableSkeleton } from '@/components/app/Skeletons';
 
 export default function ClientesPage() {
-  const { clientes, negocios } = useStore();
+  const { clientes, negocios, loading } = useStore();
+  if (loading) return <TableSkeleton toolbar={false} />;
   const dealsOf = (id: string): Negocio[] => negocios.filter((d: Negocio) => d.cliente === id);
   return (
     <div style={{ padding: 28 }}>

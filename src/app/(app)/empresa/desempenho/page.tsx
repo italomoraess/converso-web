@@ -4,9 +4,11 @@ import { WCard, Avatar } from '@/components/ui';
 import { WDonut } from '@/components/charts';
 import { useStore } from '@/components/app/store';
 import { teamAgg } from '@/components/app/admin-utils';
+import { DesempenhoSkeleton } from '@/components/app/Skeletons';
 
 export default function EmpresaDesempenhoPage() {
-  const { equipe, empresa, mesesLabels } = useStore();
+  const { equipe, empresa, mesesLabels, loading } = useStore();
+  if (loading) return <DesempenhoSkeleton />;
   const a = teamAgg(equipe, mesesLabels);
   const pct = empresa.metaEquipe ? Math.round((a.faturamento / empresa.metaEquipe) * 100) : 0;
   const ranked = [...equipe].sort((x, y) => y.receita - x.receita);

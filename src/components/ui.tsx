@@ -168,6 +168,21 @@ export function Field({
   );
 }
 
+/* ---------- Skeleton ---------- */
+export function Skeleton({
+  w = '100%',
+  h = 14,
+  r = 8,
+  style = {},
+}: {
+  w?: number | string;
+  h?: number | string;
+  r?: number;
+  style?: CSSProperties;
+}) {
+  return <span className="cv-skel" style={{ display: 'block', width: w, height: h, borderRadius: r, ...style }} />;
+}
+
 /* ---------- Button ---------- */
 type Variant = 'primary' | 'soft' | 'outline' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';

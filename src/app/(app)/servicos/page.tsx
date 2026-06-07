@@ -5,6 +5,7 @@ import { Icon } from '@/lib/icon';
 import { CV, fmtBRL, catIcon, STATUS_META, type Cliente, type Servico } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge, Field, WModal } from '@/components/ui';
 import { useStore } from '@/components/app/store';
+import { TableSkeleton } from '@/components/app/Skeletons';
 
 /* ── local form state type ──────────────────────────────────────────────── */
 type SvcFormState = {
@@ -160,9 +161,10 @@ function WServicoForm({ editing, clientes, onClose, onSave, onDelete }: WServico
 
 /* ── ServicosPage (WServicos logic) ─────────────────────────────────────── */
 export default function ServicosPage() {
-  const { servicos, clientes, clienteById, svcForm, setSvcForm, saveService, deleteService } = useStore();
+  const { servicos, clientes, clienteById, svcForm, setSvcForm, saveService, deleteService, loading } = useStore();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('Todos');
+  if (loading) return <TableSkeleton />;
   const cats = ['Todos', ...Object.keys(CV.catColor)];
   const list = servicos.filter(
     (s: Servico) =>

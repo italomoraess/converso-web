@@ -6,10 +6,12 @@ import { WCard, Avatar, Badge } from '@/components/ui';
 import { WBarChart } from '@/components/charts';
 import { useStore } from '@/components/app/store';
 import { teamAgg } from '@/components/app/admin-utils';
+import { EmpresaVisaoSkeleton } from '@/components/app/Skeletons';
 
 export default function EmpresaVisaoPage() {
-  const { equipe, empresa, mesesLabels } = useStore();
+  const { equipe, empresa, mesesLabels, loading } = useStore();
   const router = useRouter();
+  if (loading) return <EmpresaVisaoSkeleton />;
   const a = teamAgg(equipe, mesesLabels);
   const pct = empresa.metaEquipe ? Math.round((a.faturamento / empresa.metaEquipe) * 100) : 0;
   const ranked = [...equipe].sort((x, y) => y.receita - x.receita);

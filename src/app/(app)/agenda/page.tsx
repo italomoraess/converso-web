@@ -5,6 +5,7 @@ import { Icon } from '@/lib/icon';
 import { CV, type Cliente, type Evento } from '@/lib/data';
 import { WButton, WCard, Avatar, Badge, WModal } from '@/components/ui';
 import { useStore } from '@/components/app/store';
+import { AgendaSkeleton } from '@/components/app/Skeletons';
 
 const YEAR = new Date().getFullYear();
 const MONTH = new Date().getMonth(); // 0-based
@@ -146,10 +147,12 @@ function WNovoAgendamento({
 const WEEKDAYS_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 export default function AgendaPage() {
-  const { agenda, addEvent, clientes, clienteById } = useStore();
+  const { agenda, addEvent, clientes, clienteById, loading } = useStore();
 
   const [sel, setSel] = useState(TODAY);
   const [novo, setNovo] = useState(false);
+
+  if (loading) return <AgendaSkeleton />;
 
   const first = new Date(YEAR, MONTH, 1).getDay();
   const days = new Date(YEAR, MONTH + 1, 0).getDate();

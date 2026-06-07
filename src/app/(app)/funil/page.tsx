@@ -5,11 +5,13 @@ import { Icon } from '@/lib/icon';
 import { CV, fmtBRL, type Negocio, type StageId } from '@/lib/data';
 import { WCard, Avatar } from '@/components/ui';
 import { useStore } from '@/components/app/store';
+import { FunilSkeleton } from '@/components/app/Skeletons';
 
 export default function FunilPage() {
-  const { negocios, moveDeal, clienteById } = useStore();
+  const { negocios, moveDeal, clienteById, loading } = useStore();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
+  if (loading) return <FunilSkeleton />;
 
   const totalAberto = negocios
     .filter((d: Negocio) => d.etapa !== 'ganho')
