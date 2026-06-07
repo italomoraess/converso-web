@@ -1,6 +1,5 @@
 /* CONVERSO Web — service layer over crm-api (NestJS).
-   Each function returns UI-domain shapes via the mappers. The store calls these
-   when NEXT_PUBLIC_USE_MOCK !== 'true'. */
+   Each function returns UI-domain shapes via the mappers; the store calls these. */
 import { api } from '@/lib/api';
 import { tokenStorage, type Role } from '@/lib/auth-storage';
 import {

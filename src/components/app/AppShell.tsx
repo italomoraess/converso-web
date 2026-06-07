@@ -7,7 +7,6 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { AppearancePanel } from './AppearancePanel';
 import { tokenStorage } from '@/lib/auth-storage';
-import { USE_MOCK } from '@/lib/api';
 
 function Toast() {
   const { toast } = useStore();
@@ -45,7 +44,7 @@ function Shell({ children }: { children: ReactNode }) {
 function AuthGate({ children }: { children: ReactNode }) {
   const router = useRouter();
   useEffect(() => {
-    if (!USE_MOCK && !tokenStorage.access) router.replace('/login');
+    if (!tokenStorage.access) router.replace('/login');
   }, [router]);
   return <>{children}</>;
 }

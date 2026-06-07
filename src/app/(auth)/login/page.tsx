@@ -8,7 +8,6 @@ import { BrandPanel } from '@/components/auth/BrandPanel';
 import { Splash } from '@/components/auth/Splash';
 import { roleStorage, type Role } from '@/lib/auth-storage';
 import { authService } from '@/services';
-import { USE_MOCK } from '@/lib/api';
 
 const roles: { id: Role; label: string; icon: string }[] = [
   { id: 'autonomo', label: 'Autônomo', icon: 'user' },
@@ -27,11 +26,6 @@ export default function LoginPage() {
 
   const onAuth = async (r: Role) => {
     setErr(null);
-    if (USE_MOCK) {
-      roleStorage.set(r);
-      router.push(r === 'admin' ? '/empresa' : '/dashboard');
-      return;
-    }
     if (!email || !senha) {
       setErr('Informe e-mail e senha.');
       return;

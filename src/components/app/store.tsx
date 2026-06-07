@@ -1,8 +1,6 @@
 'use client';
 /* CONVERSO Web — app-wide store for the authenticated area.
-   Single source of truth: loads from the service layer (crm-api) when
-   NEXT_PUBLIC_USE_MOCK !== 'true', otherwise falls back to the bundled mock so
-   the design stays reviewable without a backend. */
+   Single source of truth: loads all data from the service layer (crm-api). */
 import {
   createContext,
   useCallback,
@@ -14,7 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  CV,
+  ultimosMeses,
   type Cliente,
   type Evento,
   type Membro,
@@ -23,7 +21,6 @@ import {
   type StageId,
 } from '@/lib/data';
 import { roleStorage, tokenStorage, type Role } from '@/lib/auth-storage';
-import { USE_MOCK } from '@/lib/api';
 import {
   authService,
   leadsService,
@@ -73,11 +70,15 @@ interface Store {
   svcForm: SvcForm | null;
   setSvcForm: (f: SvcForm | null) => void;
 
+  clienteFormOpen: boolean;
+  setClienteFormOpen: (v: boolean) => void;
+
   appearanceOpen: boolean;
   setAppearanceOpen: (v: boolean) => void;
 
   saveService: (f: Servico) => void;
   deleteService: (id: string) => void;
+  addCliente: (d: { nome: string; fone: string; email?: string }) => Promise<void>;
   moveDeal: (id: string, etapa: StageId) => void;
   addEvent: (ev: Omit<Evento, 'id'>) => void;
   inviteMember: (m: { nome?: string; email?: string; area: string }) => void;
@@ -97,23 +98,9 @@ const initials = (name: string) =>
     .join('')
     .toUpperCase() || '?';
 
-const MOCK_EMPRESA: Empresa = {
-  nome: CV.empresa.nome,
-  admin: CV.empresa.admin,
-  adminIni: CV.empresa.adminIni,
-  plano: CV.empresa.plano,
-  metaEquipe: CV.empresa.metaEquipe,
-};
+const EMPTY_EMPRESA: Empresa = { nome: '', admin: '', adminIni: '', plano: '', metaEquipe: 0 };
 
-const MOCK_USER = {
-  nome: CV.user.nome,
-  papel: CV.user.papel,
-  email: CV.user.email,
-  ini: CV.user.ini,
-  fone: '(11) 98765-4321',
-  cidade: CV.user.cidade,
-  plano: CV.user.plano,
-};
+const EMPTY_USER = { nome: '', papel: '', email: '', ini: '', fone: '', cidade: '', plano: '' };
 
 // ApiMember -> Membro (UI). Cores/iniciais derivadas no cliente.
 const PALETTE = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#F43F5E'];
@@ -141,24 +128,25 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [loading, setLoading] = useState(!USE_MOCK);
+  const [loading, setLoading] = useState(true);
 
-  const [clientes, setClientes] = useState<Cliente[]>(USE_MOCK ? CV.clientes : []);
-  const [servicos, setServicos] = useState<Servico[]>(USE_MOCK ? CV.servicos : []);
-  const [negocios, setNegocios] = useState<Negocio[]>(USE_MOCK ? CV.negocios : []);
-  const [agenda, setAgenda] = useState<Evento[]>(USE_MOCK ? CV.agenda : []);
-  const [equipe, setEquipe] = useState<Membro[]>(USE_MOCK ? CV.equipe : []);
-  const [kpis, setKpis] = useState<DashboardKpis>(USE_MOCK ? (CV.kpis as DashboardKpis) : {
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
+  const [agenda, setAgenda] = useState<Evento[]>([]);
+  const [equipe, setEquipe] = useState<Membro[]>([]);
+  const [kpis, setKpis] = useState<DashboardKpis>({
     receitaMes: 0, receitaMeta: 5000, receitaDelta: 0, aReceber: 0,
     servicosAtivos: 0, negociosAbertos: 0, taxaConversao: 0, novosClientes: 0, agendaHoje: 0,
   });
-  const [receitaMeses, setReceitaMeses] = useState<{ m: string; v: number }[]>(USE_MOCK ? CV.receitaMeses : []);
-  const [sparkReceita, setSparkReceita] = useState<number[]>(USE_MOCK ? CV.sparkReceita : []);
-  const [empresa, setEmpresa] = useState<Empresa>(MOCK_EMPRESA);
+  const [receitaMeses, setReceitaMeses] = useState<{ m: string; v: number }[]>([]);
+  const [sparkReceita, setSparkReceita] = useState<number[]>([]);
+  const [empresa, setEmpresa] = useState<Empresa>(EMPTY_EMPRESA);
   const [companyMeses, setCompanyMeses] = useState<{ m: string; v: number }[]>([]);
-  const [user, setUser] = useState(MOCK_USER);
+  const [user, setUser] = useState(EMPTY_USER);
 
   const [svcForm, setSvcForm] = useState<SvcForm | null>(null);
+  const [clienteFormOpen, setClienteFormOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
 
   const setRole = useCallback((r: Role) => {
@@ -172,10 +160,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     toastTimer.current = setTimeout(() => setToast(null), 2200);
   }, []);
 
-  // ─── Carga inicial (modo real) ──────────────────────────────────────
+  // ─── Carga inicial ──────────────────────────────────────────────────
   useEffect(() => {
-    if (USE_MOCK) return;
-    if (!tokenStorage.access) return; // o guard do layout cuida do redirect
+    if (!tokenStorage.access) {
+      setLoading(false);
+      return; // o guard do layout cuida do redirect
+    }
     let alive = true;
     (async () => {
       setLoading(true);
@@ -258,13 +248,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const saveService = useCallback(
     async (f: Servico) => {
       const isEdit = !!f.id && servicos.some((s) => s.id === f.id);
-      if (USE_MOCK) {
-        if (isEdit) setServicos((l) => l.map((s) => (s.id === f.id ? f : s)));
-        else setServicos((l) => [{ ...f, id: 's' + Date.now(), preco: +f.preco || 0 }, ...l]);
-        setSvcForm(null);
-        flash(isEdit ? 'Serviço atualizado ✓' : 'Serviço criado ✓');
-        return;
-      }
       try {
         const saved = isEdit ? await catalogService.update(f.id, f) : await catalogService.create(f);
         setServicos((l) => (isEdit ? l.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...l]));
@@ -279,13 +262,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const deleteService = useCallback(
     async (id: string) => {
-      if (!USE_MOCK) {
-        try {
-          await catalogService.remove(id);
-        } catch {
-          flash('Erro ao excluir');
-          return;
-        }
+      try {
+        await catalogService.remove(id);
+      } catch {
+        flash('Erro ao excluir');
+        return;
       }
       setServicos((l) => l.filter((s) => s.id !== id));
       setSvcForm(null);
@@ -294,23 +275,34 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [flash],
   );
 
+  const addCliente = useCallback(
+    async (d: { nome: string; fone: string; email?: string }) => {
+      const nome = d.nome.trim();
+      if (!nome) return;
+      try {
+        const lead = await leadsService.create({ name: nome, phone: d.fone.trim(), email: d.email?.trim() || undefined });
+        const { leadToCliente, leadToNegocio } = await import('@/lib/mappers');
+        setClientes((l) => [leadToCliente(lead), ...l]);
+        setNegocios((l) => [leadToNegocio(lead), ...l]);
+        setClienteFormOpen(false);
+        flash('Cliente cadastrado ✓');
+      } catch {
+        flash('Erro ao cadastrar cliente');
+      }
+    },
+    [flash],
+  );
+
   const moveDeal = useCallback(
     (id: string, etapa: StageId) => {
       setNegocios((l) => l.map((d) => (d.id === id ? { ...d, etapa } : d)));
-      if (!USE_MOCK) {
-        leadsService.moveStage(id, etapa).catch(() => flash('Erro ao mover negócio'));
-      }
+      leadsService.moveStage(id, etapa).catch(() => flash('Erro ao mover negócio'));
     },
     [flash],
   );
 
   const addEvent = useCallback(
     async (ev: Omit<Evento, 'id'>) => {
-      if (USE_MOCK) {
-        setAgenda((l) => [...l, { ...ev, id: 'a' + Date.now() }]);
-        flash('Agendamento confirmado ✓');
-        return;
-      }
       try {
         const now = new Date();
         const saved = await agendaService.create(ev, now.getFullYear(), now.getMonth());
@@ -325,18 +317,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const inviteMember = useCallback(
     async (m: { nome?: string; email?: string; area: string }) => {
-      if (USE_MOCK) {
-        setEquipe((l) => [
-          ...l,
-          {
-            id: 'p' + Date.now(), nome: m.nome || 'Convidado', area: m.area, ini: initials(m.nome || 'Novo'),
-            cor: CV.catColor[m.area] || '#6366F1', status: 'pendente', receita: 0, clientes: 0,
-            negocios: 0, conversao: 0, servicos: 0, desde: '2026', spark: [0, 0, 0, 0, 0, 0],
-          },
-        ]);
-        flash('Convite enviado ✓');
-        return;
-      }
       try {
         await companyService.invite({ name: m.nome || 'Convidado', email: m.email || undefined, area: m.area });
         await reloadMembers();
@@ -351,13 +331,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const setMemberStatus = useCallback(
     async (id: string, status: 'ativo' | 'pendente' | 'inativo') => {
       setEquipe((l) => l.map((p) => (p.id === id ? { ...p, status } : p)));
-      if (!USE_MOCK) {
-        try {
-          await companyService.updateMember(id, { status });
-        } catch {
-          flash('Erro ao atualizar membro');
-          reloadMembers();
-        }
+      try {
+        await companyService.updateMember(id, { status });
+      } catch {
+        flash('Erro ao atualizar membro');
+        reloadMembers();
       }
     },
     [flash, reloadMembers],
@@ -365,16 +343,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const updateProfile = useCallback(
     async (p: { nome?: string; fone?: string; cidade?: string }) => {
-      const next = {
-        ...(p.nome !== undefined ? { nome: p.nome } : {}),
-        ...(p.fone !== undefined ? { fone: p.fone } : {}),
-        ...(p.cidade !== undefined ? { cidade: p.cidade } : {}),
-      };
-      if (USE_MOCK) {
-        setUser((u) => ({ ...u, ...next, ini: p.nome ? initials(p.nome) : u.ini }));
-        flash('Dados salvos ✓');
-        return;
-      }
       try {
         const saved = await authService.updateProfile({ name: p.nome, phone: p.fone, city: p.cidade });
         setUser((u) => ({
@@ -394,15 +362,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const updateCompany = useCallback(
     async (c: { nome?: string; metaEquipe?: number }) => {
-      if (USE_MOCK) {
-        setEmpresa((e) => ({
-          ...e,
-          ...(c.nome !== undefined ? { nome: c.nome, adminIni: e.adminIni } : {}),
-          ...(c.metaEquipe !== undefined ? { metaEquipe: c.metaEquipe } : {}),
-        }));
-        flash('Empresa atualizada ✓');
-        return;
-      }
       try {
         const saved = await companyService.update({ name: c.nome, monthlyGoal: c.metaEquipe });
         setEmpresa((e) => ({
@@ -420,8 +379,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   );
 
   const mesesLabels = useMemo(
-    () =>
-      (companyMeses.length ? companyMeses : receitaMeses.length ? receitaMeses : CV.receitaMeses).map((m) => m.m),
+    () => {
+      const src = companyMeses.length ? companyMeses : receitaMeses;
+      return src.length ? src.map((m) => m.m) : ultimosMeses();
+    },
     [companyMeses, receitaMeses],
   );
 
@@ -431,10 +392,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       clientes, servicos, negocios, agenda, equipe, kpis, receitaMeses, sparkReceita, empresa, mesesLabels,
       clienteById, user,
       svcForm, setSvcForm,
+      clienteFormOpen, setClienteFormOpen,
       appearanceOpen, setAppearanceOpen,
-      saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany,
+      saveService, deleteService, addCliente, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany,
     }),
-    [role, setRole, collapsed, toast, flash, loading, clientes, servicos, negocios, agenda, equipe, kpis, receitaMeses, sparkReceita, empresa, mesesLabels, clienteById, user, svcForm, appearanceOpen, saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany],
+    [role, setRole, collapsed, toast, flash, loading, clientes, servicos, negocios, agenda, equipe, kpis, receitaMeses, sparkReceita, empresa, mesesLabels, clienteById, user, svcForm, clienteFormOpen, appearanceOpen, saveService, deleteService, addCliente, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

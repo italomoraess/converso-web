@@ -6,7 +6,6 @@ import { WButton, Wordmark, Field } from '@/components/ui';
 import { BrandPanel } from '@/components/auth/BrandPanel';
 import { roleStorage } from '@/lib/auth-storage';
 import { authService } from '@/services';
-import { USE_MOCK } from '@/lib/api';
 
 const atividades = ['Beleza & Estética', 'Reparos & Serviços', 'Saúde & Bem-estar', 'Criativo / Freelancer', 'Consultoria', 'Educação'];
 
@@ -19,11 +18,6 @@ export default function CadastroPage() {
 
   const onAuth = async () => {
     setErr(null);
-    if (USE_MOCK) {
-      roleStorage.set('autonomo');
-      router.push('/dashboard');
-      return;
-    }
     if (!f.nome || !f.email || !f.senha) {
       setErr('Preencha nome, e-mail e senha.');
       return;

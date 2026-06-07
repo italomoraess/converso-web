@@ -24,7 +24,7 @@ const ROUTE_META: Record<string, { title: string; sub: string }> = {
 
 export function TopBar() {
   const pathname = usePathname();
-  const { setSvcForm, flash, empresa } = useStore();
+  const { setSvcForm, setClienteFormOpen, empresa } = useStore();
   const [q, setQ] = useState('');
   const base = ROUTE_META[pathname] || { title: '', sub: '' };
   const meta =
@@ -38,7 +38,7 @@ export function TopBar() {
     pathname === '/servicos'
       ? () => setSvcForm({ editing: null })
       : pathname === '/clientes'
-        ? () => flash('Novo cliente')
+        ? () => setClienteFormOpen(true)
         : undefined;
   const newLabel = pathname === '/servicos' ? 'Novo serviço' : 'Novo cliente';
 

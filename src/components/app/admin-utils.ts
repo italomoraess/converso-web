@@ -1,5 +1,5 @@
 /* CONVERSO Web — shared aggregation helpers for the empresa/admin views. */
-import { CV, type Membro } from '@/lib/data';
+import { ultimosMeses, type Membro } from '@/lib/data';
 
 export interface TeamAgg {
   ativos: Membro[];
@@ -16,7 +16,7 @@ export function teamAgg(equipe: Membro[], mesesLabels?: string[]): TeamAgg {
   const clientes = equipe.reduce((s, p) => s + p.clientes, 0);
   const negocios = equipe.reduce((s, p) => s + p.negocios, 0);
   const ticket = clientes ? Math.round(faturamento / clientes) : 0;
-  const labels = mesesLabels?.length ? mesesLabels : CV.receitaMeses.map((m) => m.m);
+  const labels = mesesLabels?.length ? mesesLabels : ultimosMeses();
   const meses = labels.map((m, i) => ({
     m,
     v: equipe.reduce((s, p) => s + (p.spark[i] || 0), 0),

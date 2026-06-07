@@ -5,7 +5,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { tokenStorage } from '@/lib/auth-storage';
-import { USE_MOCK } from '@/lib/api';
 import { billingService } from '@/services';
 
 export function CheckoutButton({
@@ -19,7 +18,7 @@ export function CheckoutButton({
   const [busy, setBusy] = useState(false);
 
   const onClick = async () => {
-    if (USE_MOCK || !tokenStorage.access) {
+    if (!tokenStorage.access) {
       // Sem conta/sessão → começa pelo cadastro (3 dias grátis).
       router.push('/cadastro');
       return;

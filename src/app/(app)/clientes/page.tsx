@@ -1,14 +1,51 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from '@/lib/icon';
 import { fmtBRL, type Cliente, type Negocio } from '@/lib/data';
-import { WCard, Avatar } from '@/components/ui';
+import { WButton, WCard, Avatar, Field, WModal } from '@/components/ui';
 import { useStore } from '@/components/app/store';
 import { TableSkeleton } from '@/components/app/Skeletons';
 
+/* ── Modal de novo cliente ──────────────────────────────────────────────── */
+function WNovoCliente({
+  onClose,
+  onSave,
+}: {
+  onClose: () => void;
+  onSave: (d: { nome: string; fone: string; email?: string }) => void | Promise<void>;
+}) {
+  const [f, setF] = useState({ nome: '', fone: '', email: '' });
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
+  const submit = async () => {
+    if (!f.nome.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onSave({ nome: f.nome, fone: f.fone, email: f.email });
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <WModal onClose={onClose} title="Novo cliente" width={480}>
+      <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <Field label="Nome" icon="user" value={f.nome} onChange={set('nome')} placeholder="Nome do cliente" />
+        <Field label="Telefone" icon="phone" value={f.fone} onChange={set('fone')} placeholder="(11) 98765-4321" />
+        <Field label="E-mail" icon="mail" value={f.email} onChange={set('email')} placeholder="cliente@email.com" type="email" />
+      </div>
+      <div style={{ display: 'flex', gap: 12, padding: '16px 24px', borderTop: '1px solid var(--border)', justifyContent: 'flex-end' }}>
+        <WButton variant="outline" onClick={onClose}>Cancelar</WButton>
+        <WButton icon="check" onClick={submit} disabled={!f.nome.trim() || saving}>
+          {saving ? 'Salvando…' : 'Cadastrar cliente'}
+        </WButton>
+      </div>
+    </WModal>
+  );
+}
+
 export default function ClientesPage() {
-  const { clientes, negocios, loading } = useStore();
+  const { clientes, negocios, loading, clienteFormOpen, setClienteFormOpen, addCliente } = useStore();
   if (loading) return <TableSkeleton toolbar={false} />;
   const dealsOf = (id: string): Negocio[] => negocios.filter((d: Negocio) => d.cliente === id);
   return (
@@ -52,6 +89,10 @@ export default function ClientesPage() {
           </tbody>
         </table>
       </WCard>
+
+      {clienteFormOpen && (
+        <WNovoCliente onClose={() => setClienteFormOpen(false)} onSave={addCliente} />
+      )}
     </div>
   );
 }
