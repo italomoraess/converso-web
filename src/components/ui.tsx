@@ -181,6 +181,7 @@ export function WButton({
   style = {},
   full,
   type = 'button',
+  disabled,
 }: {
   children?: ReactNode;
   variant?: Variant;
@@ -190,6 +191,7 @@ export function WButton({
   style?: CSSProperties;
   full?: boolean;
   type?: 'button' | 'submit';
+  disabled?: boolean;
 }) {
   const sizes = { sm: { h: 36, px: 13, fs: 13.5 }, md: { h: 42, px: 17, fs: 14 }, lg: { h: 48, px: 20, fs: 15 } }[size];
   const variants: Record<Variant, CSSProperties> = {
@@ -203,7 +205,8 @@ export function WButton({
     <button
       type={type}
       onClick={onClick}
-      onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(.97)')}
+      disabled={disabled}
+      onMouseDown={(e) => { if (!disabled) e.currentTarget.style.transform = 'scale(.97)'; }}
       onMouseUp={(e) => (e.currentTarget.style.transform = '')}
       onMouseLeave={(e) => (e.currentTarget.style.transform = '')}
       style={{
@@ -214,7 +217,8 @@ export function WButton({
         fontFamily: 'var(--font-ui)',
         fontWeight: 700,
         border: 'none',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
         borderRadius: 'var(--r-md)',
         display: 'inline-flex',
         alignItems: 'center',

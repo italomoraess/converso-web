@@ -1,14 +1,31 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
-import { fmtBRL } from '@/lib/data';
 import { WButton, WCard, Field } from '@/components/ui';
 import { useStore } from '@/components/app/store';
 import { authService } from '@/services';
 
 export default function EmpresaConfigPage() {
   const router = useRouter();
-  const { setAppearanceOpen, empresa, equipe } = useStore();
+  const { setAppearanceOpen, empresa, equipe, updateCompany } = useStore();
+
+  const [form, setForm] = useState({ nome: empresa.nome, meta: String(empresa.metaEquipe || '') });
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setForm({ nome: empresa.nome, meta: String(empresa.metaEquipe || '') });
+  }, [empresa.nome, empresa.metaEquipe]);
+
+  const metaNum = Number(form.meta.replace(/[^\d]/g, '')) || 0;
+  const dirty = form.nome !== empresa.nome || metaNum !== empresa.metaEquipe;
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      await updateCompany({ nome: form.nome.trim() || empresa.nome, metaEquipe: metaNum });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const onLogout = async () => { await authService.logout(); router.push('/login'); };
   const toggleTweaks = () => setAppearanceOpen(true);
@@ -27,12 +44,23 @@ export default function EmpresaConfigPage() {
       <WCard pad={24}>
         <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>Configurações da empresa</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
-          <Field label="Nome da empresa" value={empresa.nome} icon="briefcase" />
-          <Field label="Responsável" value={empresa.admin} icon="user" />
-          <Field label="Meta mensal da equipe" value={fmtBRL(empresa.metaEquipe)} icon="target" />
-          <Field label="Autônomos" value={equipe.length + ' profissionais'} icon="users" />
+          <Field label="Nome da empresa" value={form.nome} onChange={(v) => setForm((f) => ({ ...f, nome: v }))} icon="briefcase" />
+          <Field label="Responsável" value={empresa.admin} icon="user" hint="Definido pela conta do administrador." />
+          <Field
+            label="Meta mensal da equipe (R$)"
+            value={form.meta}
+            onChange={(v) => setForm((f) => ({ ...f, meta: v.replace(/[^\d]/g, '') }))}
+            placeholder="45000"
+            icon="target"
+          />
+          <Field label="Autônomos" value={equipe.length + ' profissionais'} icon="users" hint="Gerencie em Autônomos." />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 22 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
+          <WButton size="sm" icon="check" onClick={onSave} disabled={!dirty || saving}>
+            {saving ? 'Salvando…' : 'Salvar alterações'}
+          </WButton>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
           <WButton variant="soft" icon="settings" onClick={toggleTweaks}>Aparência &amp; tema</WButton>
           <div style={{ flex: 1 }} />
           <WButton variant="danger" icon="logout" onClick={onLogout}>Sair</WButton>

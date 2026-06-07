@@ -22,6 +22,8 @@ export interface UserProfile {
   id: string;
   email: string;
   name?: string | null;
+  phone?: string | null;
+  city?: string | null;
   plan?: string;
   role: Role;
   company: { id: string; name: string; role: string } | null;
@@ -46,6 +48,10 @@ export const authService = {
   },
   async me(): Promise<UserProfile> {
     const { data } = await api.get<UserProfile>('/auth/me');
+    return data;
+  },
+  async updateProfile(body: { name?: string; phone?: string; city?: string }): Promise<UserProfile> {
+    const { data } = await api.patch<UserProfile>('/auth/me', body);
     return data;
   },
   async logout() {
@@ -188,6 +194,10 @@ export interface ApiCompany {
 export const companyService = {
   async get() {
     const { data } = await api.get<ApiCompany>('/company');
+    return data;
+  },
+  async update(body: { name?: string; plan?: string; monthlyGoal?: number }) {
+    const { data } = await api.patch<ApiCompany>('/company', body);
     return data;
   },
   async members() {

@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/lib/icon';
 import { WButton, WCard, Field } from '@/components/ui';
 import { useStore } from '@/components/app/store';
 import { authService } from '@/services';
+
+/* Preferências de notificação — persistidas localmente (não há backend dedicado). */
+const NOTIF_KEY = 'cv:notif-prefs';
+type NotifPrefs = { push: boolean; email: boolean; whatsapp: boolean };
+const DEFAULT_NOTIF: NotifPrefs = { push: true, email: true, whatsapp: false };
 
 interface ToggleProps {
   on: boolean;
@@ -22,11 +27,46 @@ interface RowProps {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { setAppearanceOpen, user, servicos, clientes, negocios } = useStore();
+  const { setAppearanceOpen, user, servicos, clientes, negocios, updateProfile } = useStore();
   const u = user;
-  const [notif, setNotif] = useState(true);
-  const [email, setEmail] = useState(true);
-  const [resumo, setResumo] = useState(false);
+
+  // ── Dados da conta (form controlado) ──
+  const [form, setForm] = useState({ nome: u.nome, fone: u.fone, cidade: u.cidade });
+  const [saving, setSaving] = useState(false);
+  // Re-sincroniza quando o store termina de carregar o perfil real.
+  useEffect(() => {
+    setForm({ nome: u.nome, fone: u.fone, cidade: u.cidade });
+  }, [u.nome, u.fone, u.cidade]);
+  const dirty = form.nome !== u.nome || form.fone !== u.fone || form.cidade !== u.cidade;
+  const onSave = async () => {
+    setSaving(true);
+    try {
+      await updateProfile(form);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Notificações (persistidas em localStorage) ──
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_NOTIF);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(NOTIF_KEY);
+      if (raw) setPrefs({ ...DEFAULT_NOTIF, ...JSON.parse(raw) });
+    } catch {
+      /* ignora json inválido */
+    }
+  }, []);
+  const togglePref = (k: keyof NotifPrefs) =>
+    setPrefs((p) => {
+      const next = { ...p, [k]: !p[k] };
+      try {
+        localStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+      } catch {
+        /* storage indisponível */
+      }
+      return next;
+    });
 
   const Toggle = ({ on, onClick }: ToggleProps) => (
     <button
@@ -149,7 +189,7 @@ export default function PerfilPage() {
                 fontWeight: 600,
               } satisfies CSSProperties}
             >
-              <Icon name="pin" size={15} /> {u.cidade}
+              <Icon name="pin" size={15} /> {u.cidade || 'Cidade não informada'}
             </div>
             <div
               style={{
@@ -213,14 +253,26 @@ export default function PerfilPage() {
           <div
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 } satisfies CSSProperties}
           >
-            <Field label="Nome" value={u.nome} />
-            <Field label="E-mail" value={u.email} icon="mail" />
-            <Field label="Telefone" value="(11) 98765-4321" icon="phone" />
-            <Field label="Atividade" value={u.papel} icon="briefcase" />
+            <Field label="Nome" value={form.nome} onChange={(v) => setForm((f) => ({ ...f, nome: v }))} />
+            <Field label="E-mail" value={u.email} icon="mail" hint="O e-mail de acesso não pode ser alterado aqui." />
+            <Field
+              label="Telefone"
+              value={form.fone}
+              onChange={(v) => setForm((f) => ({ ...f, fone: v }))}
+              placeholder="(11) 98765-4321"
+              icon="phone"
+            />
+            <Field
+              label="Cidade"
+              value={form.cidade}
+              onChange={(v) => setForm((f) => ({ ...f, cidade: v }))}
+              placeholder="São Paulo, SP"
+              icon="pin"
+            />
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 } satisfies CSSProperties}>
-            <WButton size="sm" icon="check">
-              Salvar dados
+            <WButton size="sm" icon="check" onClick={onSave} disabled={!dirty || saving}>
+              {saving ? 'Salvando…' : 'Salvar dados'}
             </WButton>
           </div>
         </WCard>
@@ -231,19 +283,19 @@ export default function PerfilPage() {
             icon="bell"
             title="Notificações push"
             sub="Lembretes de agenda e novos leads"
-            right={<Toggle on={notif} onClick={() => setNotif((v) => !v)} />}
+            right={<Toggle on={prefs.push} onClick={() => togglePref('push')} />}
           />
           <Row
             icon="mail"
             title="Resumo por e-mail"
             sub="Receba o fechamento diário"
-            right={<Toggle on={email} onClick={() => setEmail((v) => !v)} />}
+            right={<Toggle on={prefs.email} onClick={() => togglePref('email')} />}
           />
           <Row
             icon="whatsapp"
             title="Confirmação por WhatsApp"
             sub="Avise clientes automaticamente"
-            right={<Toggle on={resumo} onClick={() => setResumo((v) => !v)} />}
+            right={<Toggle on={prefs.whatsapp} onClick={() => togglePref('whatsapp')} />}
             last
           />
         </WCard>
@@ -259,18 +311,6 @@ export default function PerfilPage() {
                 Ajustar
               </WButton>
             }
-          />
-          <Row
-            icon="receipt"
-            title="Pagamentos & cobrança"
-            sub="Pix, cartão, boletos"
-            right={<Icon name="chevR" size={18} color="var(--text-subtle)" />}
-          />
-          <Row
-            icon="calendar"
-            title="Horário de atendimento"
-            sub="Segunda a sexta · 08h–18h"
-            right={<Icon name="chevR" size={18} color="var(--text-subtle)" />}
             last
           />
         </WCard>

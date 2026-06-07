@@ -68,7 +68,7 @@ interface Store {
   mesesLabels: string[];
 
   clienteById: (id: string) => Cliente;
-  user: { nome: string; papel: string; email: string; ini: string; cidade: string; plano: string };
+  user: { nome: string; papel: string; email: string; ini: string; fone: string; cidade: string; plano: string };
 
   svcForm: SvcForm | null;
   setSvcForm: (f: SvcForm | null) => void;
@@ -82,6 +82,8 @@ interface Store {
   addEvent: (ev: Omit<Evento, 'id'>) => void;
   inviteMember: (m: { nome?: string; email?: string; area: string }) => void;
   setMemberStatus: (id: string, status: 'ativo' | 'pendente' | 'inativo') => void;
+  updateProfile: (p: { nome?: string; fone?: string; cidade?: string }) => Promise<void>;
+  updateCompany: (c: { nome?: string; metaEquipe?: number }) => Promise<void>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -108,6 +110,7 @@ const MOCK_USER = {
   papel: CV.user.papel,
   email: CV.user.email,
   ini: CV.user.ini,
+  fone: '(11) 98765-4321',
   cidade: CV.user.cidade,
   plano: CV.user.plano,
 };
@@ -194,7 +197,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
             papel: profile.company ? `Admin · ${profile.company.name}` : 'Autônomo',
             email: profile.email,
             ini: initials(profile.name ?? profile.email),
-            cidade: '',
+            fone: profile.phone ?? '',
+            cidade: profile.city ?? '',
             plano: profile.plan ?? 'Profissional',
           });
         }
@@ -359,6 +363,62 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [flash, reloadMembers],
   );
 
+  const updateProfile = useCallback(
+    async (p: { nome?: string; fone?: string; cidade?: string }) => {
+      const next = {
+        ...(p.nome !== undefined ? { nome: p.nome } : {}),
+        ...(p.fone !== undefined ? { fone: p.fone } : {}),
+        ...(p.cidade !== undefined ? { cidade: p.cidade } : {}),
+      };
+      if (USE_MOCK) {
+        setUser((u) => ({ ...u, ...next, ini: p.nome ? initials(p.nome) : u.ini }));
+        flash('Dados salvos ✓');
+        return;
+      }
+      try {
+        const saved = await authService.updateProfile({ name: p.nome, phone: p.fone, city: p.cidade });
+        setUser((u) => ({
+          ...u,
+          nome: saved.name ?? u.nome,
+          ini: initials(saved.name ?? u.nome),
+          fone: saved.phone ?? '',
+          cidade: saved.city ?? '',
+        }));
+        flash('Dados salvos ✓');
+      } catch {
+        flash('Erro ao salvar dados');
+      }
+    },
+    [flash],
+  );
+
+  const updateCompany = useCallback(
+    async (c: { nome?: string; metaEquipe?: number }) => {
+      if (USE_MOCK) {
+        setEmpresa((e) => ({
+          ...e,
+          ...(c.nome !== undefined ? { nome: c.nome, adminIni: e.adminIni } : {}),
+          ...(c.metaEquipe !== undefined ? { metaEquipe: c.metaEquipe } : {}),
+        }));
+        flash('Empresa atualizada ✓');
+        return;
+      }
+      try {
+        const saved = await companyService.update({ name: c.nome, monthlyGoal: c.metaEquipe });
+        setEmpresa((e) => ({
+          ...e,
+          nome: saved.name,
+          plano: saved.plan,
+          metaEquipe: saved.monthlyGoal ?? e.metaEquipe,
+        }));
+        flash('Empresa atualizada ✓');
+      } catch {
+        flash('Erro ao atualizar empresa');
+      }
+    },
+    [flash],
+  );
+
   const mesesLabels = useMemo(
     () =>
       (companyMeses.length ? companyMeses : receitaMeses.length ? receitaMeses : CV.receitaMeses).map((m) => m.m),
@@ -372,9 +432,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       clienteById, user,
       svcForm, setSvcForm,
       appearanceOpen, setAppearanceOpen,
-      saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus,
+      saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany,
     }),
-    [role, setRole, collapsed, toast, flash, loading, clientes, servicos, negocios, agenda, equipe, kpis, receitaMeses, sparkReceita, empresa, mesesLabels, clienteById, user, svcForm, appearanceOpen, saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus],
+    [role, setRole, collapsed, toast, flash, loading, clientes, servicos, negocios, agenda, equipe, kpis, receitaMeses, sparkReceita, empresa, mesesLabels, clienteById, user, svcForm, appearanceOpen, saveService, deleteService, moveDeal, addEvent, inviteMember, setMemberStatus, updateProfile, updateCompany],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
